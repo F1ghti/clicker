@@ -28,7 +28,6 @@
       z-index: 1;
     }
 
-    /* Анимированные звёздочки */
     .star {
       position: absolute;
       width: 2px;
@@ -102,7 +101,6 @@
       }
     }
 
-    /* Падающие монетки */
     .falling-coin {
       position: absolute;
       top: -50px;
@@ -130,7 +128,6 @@
       100% { transform: translateX(-50%) translateY(100vh); opacity: 0; }
     }
 
-    /* Падающая звезда (обычная) */
     .catchable-falling-star {
       position: absolute;
       width: 8px;
@@ -141,12 +138,6 @@
       cursor: pointer;
     }
 
-    @keyframes fallDown {
-      from { transform: translate(0, 0); opacity: 1; }
-      to { transform: translate(20vw, 110vh); opacity: 0; }
-    }
-
-    /* Частицы */
     .particle {
       position: absolute;
       width: 6px;
@@ -171,19 +162,14 @@
   </style>
 </head>
 <body>
-  <!-- Анимированные звёздочки -->
   <div id="stars-container"></div>
-
   <div class="container">
     <div class="coins-display">Монет: <span id="coins">0</span></div>
     <button class="coin-button" id="coinBtn">💰</button>
   </div>
 
   <script>
-    // === НАСТРОЙКИ ===
-    const API_URL = 'http://92.63.106.58:3000'; // ← твой IP
-    const BOT_TOKEN = '8331253569:AAGv7W3WRCbYbGyA5xbz2ZM_DdEgi9mUDWk';
-
+    const API_URL = 'http://92.63.106.58:3000';
     let tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
@@ -201,20 +187,22 @@
     const coinsEl = document.getElementById('coins');
     coinsEl.textContent = coins;
 
-    // Отправка счёта на сервер
     async function sendScore() {
       try {
+        const initData = tg?.initData || '';
         await fetch(`${API_URL}/api/update-score`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': initData
+          },
           body: JSON.stringify({ userId, username, coins })
         });
       } catch (e) {
-        console.warn('Не удалось отправить счёт:', e);
+        console.warn('Ошибка отправки:', e);
       }
     }
 
-    // Создание фоновых звёзд
     function createStars() {
       const container = document.getElementById('stars-container');
       const starCount = 50;
@@ -245,7 +233,6 @@
       }
     }
 
-    // Хвост звезды
     function createTail(startX, startY, color, duration) {
       const tailLength = 10;
       const tail = [];
@@ -291,7 +278,6 @@
       animate();
     }
 
-    // Создание кликабельной звезды
     function createCatchableStar(reward, color, isSuper = false) {
       const container = document.getElementById('stars-container');
       const head = document.createElement('div');
@@ -353,7 +339,6 @@
       }, 4000);
     }
 
-    // Частицы
     function createParticles(x, y) {
       const particleCount = 12;
       for (let i = 0; i < particleCount; i++) {
@@ -388,7 +373,6 @@
       }
     }
 
-    // Основной клик
     function handleClick(e) {
       e.preventDefault();
       coins++;
@@ -416,7 +400,6 @@
 
     document.body.addEventListener('click', handleClick);
 
-    // Запуск
     createStars();
     
     function startNormalStarTimer() {
