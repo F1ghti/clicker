@@ -24,6 +24,7 @@
       overflow-x: hidden;
       padding: 20px;
       touch-action: manipulation;
+      position: relative;
     }
 
     /* Звёздное небо */
@@ -35,13 +36,14 @@
       height: 100%;
       pointer-events: none;
       z-index: -1;
+      overflow: hidden;
     }
 
     #stars, #stars2, #stars3 {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
+      width: 200%; /* Увеличиваем ширину для анимации */
       height: 100%;
       background: transparent;
     }
@@ -70,7 +72,7 @@
 
     @keyframes animStar {
       from { transform: translateX(0); }
-      to { transform: translateX(-1000px); }
+      to { transform: translateX(-100%); } /* Сдвигаем на всю ширину */
     }
 
     .container {
