@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Кликер Монет</title>
+  <title>Кликер</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
@@ -33,18 +33,38 @@
       100% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
     }
 
-    .container {
-      text-align: center;
-      max-width: 90vw;
-      width: 100%;
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      background: rgba(0,0,0,0.2);
+      padding: 10px 20px;
+      border-radius: 20px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #667eea;
+    }
+
+    .username {
+      font-size: 1.2rem;
+      font-weight: bold;
     }
 
     .coins-display {
-      font-size: 3rem;
+      font-size: 2.5rem;
       font-weight: bold;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       text-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      letter-spacing: 1px;
     }
 
     .coin-button {
@@ -71,11 +91,6 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.4);
     }
 
-    .coin-button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-    }
-
     .plus-one {
       position: absolute;
       font-size: 1.6rem;
@@ -99,7 +114,6 @@
       }
     }
 
-    /* Падающие смайлики */
     .falling-coin {
       position: absolute;
       top: -50px;
@@ -129,67 +143,88 @@
 
     @media (max-width: 600px) {
       .coins-display {
-        font-size: 2.2rem;
+        font-size: 2rem;
       }
       .coin-button {
         width: 110px;
         height: 110px;
         font-size: 3rem;
       }
+      .username {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="coins-display">Счёт: <span id="coins">0</span></div>
+    <div class="user-info">
+      <div class="avatar" id="avatar">👤</div>
+      <div class="username" id="username">Загрузка...</div>
+    </div>
+    <div class="coins-display">Монет: <span id="coins">0</span></div>
     <button class="coin-button" id="coinBtn">💰</button>
   </div>
 
   <script>
-    let coins = 0;
-    const coinsEl = document.getElementById('coins');
-    const btn = document.getElementById('coinBtn');
-
     // Инициализация Telegram WebApp
-    if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
+    let tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
     }
 
+    // Получаем данные пользователя
+    const user = tg?.initDataUnsafe?.user || {};
+    const userId = user.id || 'guest';
+    const firstName = user.first_name || 'Друг';
+    const lastName = user.last_name || '';
+    const username = user.username || '';
+
+    // Отображаем имя
+    const displayName = username ? `@${username}` : (firstName + (lastName ? ' ' + lastName : ''));
+    document.getElementById('username').textContent = displayName;
+
+    // Загружаем аватар (если есть URL)
+    const avatarEl = document.getElementById('avatar');
+    if (user.photo_url) {
+      avatarEl.innerHTML = `<img src="${user.photo_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+    } else {
+      // Оставляем эмодзи по умолчанию
+    }
+
+    // Загружаем сохранённый счёт
+    let coins = parseInt(localStorage.getItem(`coins_${userId}`)) || 0;
+    const coinsEl = document.getElementById('coins');
+    coinsEl.textContent = coins;
+
+    // Обработчик клика
+    const btn = document.getElementById('coinBtn');
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       coins++;
       coinsEl.textContent = coins;
 
-      // Создаём анимацию "+1"
+      // Сохраняем
+      localStorage.setItem(`coins_${userId}`, coins.toString());
+
+      // Анимация "+1"
       const plusOne = document.createElement('div');
       plusOne.className = 'plus-one';
       plusOne.textContent = '+1';
-      
       const rect = btn.getBoundingClientRect();
       plusOne.style.left = `${rect.left + rect.width / 2}px`;
       plusOne.style.top = `${rect.top + rect.height / 2}px`;
-
       document.body.appendChild(plusOne);
+      setTimeout(() => plusOne.remove(), 1000);
 
-      setTimeout(() => {
-        if (plusOne.parentNode) {
-          plusOne.parentNode.removeChild(plusOne);
-        }
-      }, 1000);
-
-      // Создаём падающий смайлик
+      // Падающая монетка
       const fallingCoin = document.createElement('div');
       fallingCoin.className = 'falling-coin';
       fallingCoin.textContent = '💰';
-      fallingCoin.style.left = Math.random() * 100 + '%'; // случайное положение по горизонтали
+      fallingCoin.style.left = Math.random() * 100 + '%';
       document.body.appendChild(fallingCoin);
-
-      setTimeout(() => {
-        if (fallingCoin.parentNode) {
-          fallingCoin.parentNode.removeChild(fallingCoin);
-        }
-      }, 3000);
+      setTimeout(() => fallingCoin.remove(), 3000);
     });
   </script>
 </body>
