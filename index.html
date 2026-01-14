@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Кликер Смайликов</title>
+  <title>Кликер Монет</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
@@ -24,7 +24,7 @@
       overflow-x: hidden;
       padding: 20px;
       touch-action: manipulation;
-      animation: gradientPulse 8s ease-in-out infinite; /* Плавный перелив */
+      animation: gradientPulse 8s ease-in-out infinite;
     }
 
     @keyframes gradientPulse {
@@ -63,7 +63,7 @@
       align-items: center;
       justify-content: center;
       -webkit-tap-highlight-color: transparent;
-      background: transparent; /* ⬅️ Убрали белый фон! */
+      background: transparent;
     }
 
     .coin-button:active {
@@ -99,7 +99,7 @@
       }
     }
 
-    /* Падающие смайлики — без белого фона */
+    /* Падающие смайлики */
     .falling-coin {
       position: absolute;
       top: -50px;
@@ -127,7 +127,6 @@
       100% { transform: translateX(-50%) translateY(100vh); opacity: 0; }
     }
 
-    /* Адаптивность */
     @media (max-width: 600px) {
       .coins-display {
         font-size: 2.2rem;
