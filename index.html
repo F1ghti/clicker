@@ -28,6 +28,46 @@
       z-index: 1;
     }
 
+    /* Аватар и ник */
+    .user-info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 16px;
+      border-radius: 20px;
+      z-index: 20;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #667eea;
+      overflow: hidden;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .username {
+      font-size: 1.2rem;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    /* Анимированные звёздочки */
     .star {
       position: absolute;
       width: 2px;
@@ -101,6 +141,7 @@
       }
     }
 
+    /* Падающие монетки */
     .falling-coin {
       position: absolute;
       top: -50px;
@@ -128,6 +169,7 @@
       100% { transform: translateX(-50%) translateY(100vh); opacity: 0; }
     }
 
+    /* Падающая звезда (обычная) */
     .catchable-falling-star {
       position: absolute;
       width: 8px;
@@ -138,6 +180,12 @@
       cursor: pointer;
     }
 
+    @keyframes fallDown {
+      from { transform: translate(0, 0); opacity: 1; }
+      to { transform: translate(20vw, 110vh); opacity: 0; }
+    }
+
+    /* Частицы */
     .particle {
       position: absolute;
       width: 6px;
@@ -158,11 +206,24 @@
         height: 110px;
         font-size: 3rem;
       }
+      .user-info {
+        top: 10px;
+        left: 10px;
+        padding: 6px 12px;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Аватар и ник -->
+  <div class="user-info">
+    <div class="avatar" id="avatar">👤</div>
+    <div class="username" id="username">Загрузка...</div>
+  </div>
+
+  <!-- Анимированные звёздочки -->
   <div id="stars-container"></div>
+
   <div class="container">
     <div class="coins-display">Монет: <span id="coins">0</span></div>
     <button class="coin-button" id="coinBtn">💰</button>
@@ -180,12 +241,32 @@
     const userId = (user.id || 'guest').toString();
     const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
+    // Сохраняем имя и фото в localStorage
+    localStorage.setItem(`username_${userId}`, username);
+    if (user.photo_url) {
+      localStorage.setItem(`photo_${userId}`, user.photo_url);
+    }
+
     let coins = parseInt(localStorage.getItem(`coins_${userId}`)) || 0;
     let caughtStars = parseInt(localStorage.getItem(`stars_${userId}`)) || 0;
     let caughtSuperStars = parseInt(localStorage.getItem(`superstars_${userId}`)) || 0;
 
     const coinsEl = document.getElementById('coins');
     coinsEl.textContent = coins;
+
+    // Отображаем аватар и ник
+    const avatarEl = document.getElementById('avatar');
+    const usernameEl = document.getElementById('username');
+
+    // Устанавливаем имя
+    usernameEl.textContent = username;
+
+    // Устанавливаем аватар
+    if (user.photo_url) {
+      avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
+    } else {
+      avatarEl.textContent = '👤';
+    }
 
     async function sendScore() {
       try {
