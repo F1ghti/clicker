@@ -30,19 +30,20 @@
 
     /* Анимированные звёздочки */
     .star {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: #fff;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: -1;
-  animation: twinkle 3s infinite alternate;
-}
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+      animation: twinkle 3s infinite alternate;
+    }
+
     @keyframes twinkle {
-  0% { opacity: 0.3; }
-  100% { opacity: 1; }
-}
+      0% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
 
     .container {
       text-align: center;
@@ -90,22 +91,6 @@
       text-shadow: 0 0 8px rgba(255,215,0,0.8);
     }
 
-    .falling-star {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: -1;
-  box-shadow: 0 0 10px rgba(255,255,255,0.8);
-}
-
-@keyframes fall {
-  from { transform: translate(0, 0); opacity: 1; }
-  to { transform: translate(100vw, 100vh); opacity: 0; }
-}
-
     @keyframes floatUp {
       0% {
         opacity: 1;
@@ -131,33 +116,34 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: fall 3s linear forwards;
+      animation: fallCoin 3s linear forwards;
       pointer-events: none;
       z-index: -1;
       background: transparent;
       text-shadow: 0 0 6px rgba(255,215,0,0.6);
     }
-    
-    .catchable-falling-star {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  pointer-events: auto;
-  z-index: 5;
-  cursor: pointer;
-}
 
-@keyframes fallDown {
-  from { transform: translate(0, 0); opacity: 1; }
-  to { transform: translate(20vw, 110vh); opacity: 0; }
-}
-
-    @keyframes fall {
+    @keyframes fallCoin {
       0% { transform: translateX(-50%) translateY(-50px); opacity: 0; }
       10% { opacity: 1; }
       90% { opacity: 1; }
       100% { transform: translateX(-50%) translateY(100vh); opacity: 0; }
+    }
+
+    /* Падающая звезда (обычная) */
+    .catchable-falling-star {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: auto;
+      z-index: 5;
+      cursor: pointer;
+    }
+
+    @keyframes fallDown {
+      from { transform: translate(0, 0); opacity: 1; }
+      to { transform: translate(20vw, 110vh); opacity: 0; }
     }
 
     /* Частицы */
@@ -194,238 +180,263 @@
   </div>
 
   <script>
-  // Инициализация Telegram WebApp
-  let tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
-  }
+    // === НАСТРОЙКИ ===
+    const API_URL = 'http://92.63.106.58:3000'; // ← твой IP
+    const BOT_TOKEN = '8331253569:AAGv7W3WRCbYbGyA5xbz2ZM_DdEgi9mUDWk';
 
-  const userId = (tg?.initDataUnsafe?.user?.id || 'guest').toString();
-  let coins = parseInt(localStorage.getItem(`coins_${userId}`)) || 0;
-  const coinsEl = document.getElementById('coins');
-  coinsEl.textContent = coins;
-
-  // Создание фоновых звёзд
-  function createStars() {
-    const container = document.getElementById('stars-container');
-    const starCount = 50;
-    for (let i = 0; i < starCount; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      star.style.left = Math.random() * 100 + '%';
-      star.style.top = Math.random() * 100 + '%';
-
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 0.02 + Math.random() * 0.05;
-      let x = parseFloat(star.style.left);
-      let y = parseFloat(star.style.top);
-
-      const animate = () => {
-        x += Math.cos(angle) * speed;
-        y += Math.sin(angle) * speed;
-        if (x > 100) x = 0;
-        if (x < 0) x = 100;
-        if (y > 100) y = 0;
-        if (y < 0) y = 100;
-        star.style.left = `${x}%`;
-        star.style.top = `${y}%`;
-        requestAnimationFrame(animate);
-      };
-      animate();
-      container.appendChild(star);
-    }
-  }
-
-  // Создание хвоста для звезды
-  function createTail(startX, startY, color, duration) {
-    const tailLength = 10;
-    const tail = [];
-    for (let i = 0; i < tailLength; i++) {
-      const dot = document.createElement('div');
-      dot.style.position = 'absolute';
-      dot.style.width = `${4 - i * 0.3}px`;
-      dot.style.height = `${4 - i * 0.3}px`;
-      dot.style.background = color;
-      dot.style.borderRadius = '50%';
-      dot.style.opacity = `${1 - i * 0.1}`;
-      dot.style.pointerEvents = 'none';
-      dot.style.zIndex = '4';
-      dot.style.left = `${startX}%`;
-      dot.style.top = `${startY}%`;
-      document.getElementById('stars-container').appendChild(dot);
-      tail.push({ el: dot, offset: i * 0.1 });
+    let tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
     }
 
-    return tail;
-  }
+    const user = tg?.initDataUnsafe?.user || {};
+    const userId = (user.id || 'guest').toString();
+    const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
-  // Анимация хвоста
-  function animateTail(tail, startX, startY, endX, endY, duration) {
-    const startTime = Date.now();
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / (duration * 1000), 1);
+    let coins = parseInt(localStorage.getItem(`coins_${userId}`)) || 0;
+    let caughtStars = parseInt(localStorage.getItem(`stars_${userId}`)) || 0;
+    let caughtSuperStars = parseInt(localStorage.getItem(`superstars_${userId}`)) || 0;
 
-      const currentX = startX + (endX - startX) * progress;
-      const currentY = startY + (endY - startY) * progress;
+    const coinsEl = document.getElementById('coins');
+    coinsEl.textContent = coins;
 
-      tail.forEach((part, i) => {
-        const offsetProgress = Math.max(progress - part.offset, 0);
-        const offsetX = startX + (endX - startX) * offsetProgress;
-        const offsetY = startY + (endY - startY) * offsetProgress;
-        part.el.style.left = `${offsetX}%`;
-        part.el.style.top = `${offsetY}%`;
-        part.el.style.opacity = `${(1 - offsetProgress) * (1 - i * 0.1)}`;
-      });
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        tail.forEach(part => part.el.remove());
+    // Отправка счёта на сервер
+    async function sendScore() {
+      try {
+        await fetch(`${API_URL}/api/update-score`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, username, coins })
+        });
+      } catch (e) {
+        console.warn('Не удалось отправить счёт:', e);
       }
-    };
-    animate();
-  }
-
-  // Создание кликабельной звезды с хвостом
-  function createCatchableStar(reward, color, isSuper = false) {
-    const container = document.getElementById('stars-container');
-    const head = document.createElement('div');
-    head.className = 'catchable-falling-star';
-    head.style.background = color;
-    head.style.boxShadow = `0 0 15px ${color}`;
-    if (isSuper) {
-      head.style.width = '12px';
-      head.style.height = '12px';
     }
 
-    const startX = Math.random() * 100;
-    const endX = startX + (Math.random() * 20 - 10); // небольшой наклон
-    head.style.left = `${startX}%`;
-    head.style.top = `-10%`;
+    // Создание фоновых звёзд
+    function createStars() {
+      const container = document.getElementById('stars-container');
+      const starCount = 50;
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
 
-    // Хвост
-    const tail = createTail(startX, -10, color, 4);
-    animateTail(tail, startX, -10, endX, 110, 4);
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.02 + Math.random() * 0.05;
+        let x = parseFloat(star.style.left);
+        let y = parseFloat(star.style.top);
 
-    // Клик
-    head.addEventListener('click', (e) => {
-      e.stopPropagation();
-      coins += reward;
-      coinsEl.textContent = coins;
-      localStorage.setItem(`coins_${userId}`, coins.toString());
+        const animate = () => {
+          x += Math.cos(angle) * speed;
+          y += Math.sin(angle) * speed;
+          if (x > 100) x = 0;
+          if (x < 0) x = 100;
+          if (y > 100) y = 0;
+          if (y < 0) y = 100;
+          star.style.left = `${x}%`;
+          star.style.top = `${y}%`;
+          requestAnimationFrame(animate);
+        };
+        animate();
+        container.appendChild(star);
+      }
+    }
 
-      const plusText = document.createElement('div');
-      plusText.className = 'plus-one';
-      plusText.textContent = `+${reward}`;
-      plusText.style.color = color;
-      plusText.style.left = `${e.clientX}px`;
-      plusText.style.top = `${e.clientY}px`;
-      document.body.appendChild(plusText);
-      setTimeout(() => plusText.remove(), 1000);
+    // Хвост звезды
+    function createTail(startX, startY, color, duration) {
+      const tailLength = 10;
+      const tail = [];
+      for (let i = 0; i < tailLength; i++) {
+        const dot = document.createElement('div');
+        dot.style.position = 'absolute';
+        dot.style.width = `${4 - i * 0.3}px`;
+        dot.style.height = `${4 - i * 0.3}px`;
+        dot.style.background = color;
+        dot.style.borderRadius = '50%';
+        dot.style.opacity = `${1 - i * 0.1}`;
+        dot.style.pointerEvents = 'none';
+        dot.style.zIndex = '4';
+        dot.style.left = `${startX}%`;
+        dot.style.top = `${startY}%`;
+        document.getElementById('stars-container').appendChild(dot);
+        tail.push({ el: dot, offset: i * 0.1 });
+      }
+      return tail;
+    }
 
-      createParticles(e.clientX, e.clientY);
-      head.remove();
-      tail.forEach(part => {
-        if (part.el.parentNode) part.el.remove();
-      });
-    });
-
-    container.appendChild(head);
-
-    // Удаление через 4 сек
-    setTimeout(() => {
-      if (head.parentNode) head.remove();
-      tail.forEach(part => {
-        if (part.el.parentNode) part.el.remove();
-      });
-    }, 4000);
-  }
-
-  // Таймеры
-  function startNormalStarTimer() {
-    const delay = 8000 + Math.random() * 12000;
-    setTimeout(() => {
-      createCatchableStar(55, '#ffcc00');
-      startNormalStarTimer();
-    }, delay);
-  }
-
-  function startSuperStarTimer() {
-    const delay = 30000 + Math.random() * 30000; // 30–60 сек
-    setTimeout(() => {
-      createCatchableStar(100, '#cc00ff', true); // фиолетовый
-      startSuperStarTimer();
-    }, delay);
-  }
-
-  // Частицы
-  function createParticles(x, y) {
-    const particleCount = 12;
-    for (let i = 0; i < particleCount; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      particle.style.left = `${x}px`;
-      particle.style.top = `${y}px`;
-      document.body.appendChild(particle);
-
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 4;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-
-      let opacity = 1;
-      let posX = x;
-      let posY = y;
-
+    function animateTail(tail, startX, startY, endX, endY, duration) {
+      const startTime = Date.now();
       const animate = () => {
-        opacity -= 0.02;
-        posX += vx;
-        posY += vy;
-        particle.style.opacity = opacity;
-        particle.style.transform = `translate(${posX - x}px, ${posY - y}px)`;
-        if (opacity > 0) {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / (duration * 1000), 1);
+        const currentX = startX + (endX - startX) * progress;
+        const currentY = startY + (endY - startY) * progress;
+        tail.forEach((part, i) => {
+          const offsetProgress = Math.max(progress - part.offset, 0);
+          const offsetX = startX + (endX - startX) * offsetProgress;
+          const offsetY = startY + (endY - startY) * offsetProgress;
+          part.el.style.left = `${offsetX}%`;
+          part.el.style.top = `${offsetY}%`;
+          part.el.style.opacity = `${(1 - offsetProgress) * (1 - i * 0.1)}`;
+        });
+        if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
-          particle.remove();
+          tail.forEach(part => part.el.remove());
         }
       };
-      requestAnimationFrame(animate);
+      animate();
     }
-  }
 
-  // Основной клик
-  function handleClick(e) {
-    e.preventDefault();
-    coins++;
-    coinsEl.textContent = coins;
-    localStorage.setItem(`coins_${userId}`, coins.toString());
+    // Создание кликабельной звезды
+    function createCatchableStar(reward, color, isSuper = false) {
+      const container = document.getElementById('stars-container');
+      const head = document.createElement('div');
+      head.className = 'catchable-falling-star';
+      head.style.background = color;
+      head.style.boxShadow = `0 0 15px ${color}`;
+      if (isSuper) {
+        head.style.width = '12px';
+        head.style.height = '12px';
+      }
 
-    const plusOne = document.createElement('div');
-    plusOne.className = 'plus-one';
-    plusOne.textContent = '+1';
-    plusOne.style.left = `${e.clientX}px`;
-    plusOne.style.top = `${e.clientY}px`;
-    document.body.appendChild(plusOne);
-    setTimeout(() => plusOne.remove(), 1000);
+      const startX = Math.random() * 100;
+      const endX = startX + (Math.random() * 20 - 10);
+      head.style.left = `${startX}%`;
+      head.style.top = `-10%`;
 
-    createParticles(e.clientX, e.clientY);
+      const tail = createTail(startX, -10, color, 4);
+      animateTail(tail, startX, -10, endX, 110, 4);
 
-    const fallingCoin = document.createElement('div');
-    fallingCoin.className = 'falling-coin';
-    fallingCoin.textContent = '💰';
-    fallingCoin.style.left = Math.random() * 100 + '%';
-    document.body.appendChild(fallingCoin);
-    setTimeout(() => fallingCoin.remove(), 3000);
-  }
+      head.addEventListener('click', (e) => {
+        e.stopPropagation();
+        coins += reward;
+        coinsEl.textContent = coins;
+        localStorage.setItem(`coins_${userId}`, coins.toString());
 
-  document.body.addEventListener('click', handleClick);
+        if (reward === 55) {
+          caughtStars++;
+          localStorage.setItem(`stars_${userId}`, caughtStars.toString());
+        } else if (reward === 100) {
+          caughtSuperStars++;
+          localStorage.setItem(`superstars_${userId}`, caughtSuperStars.toString());
+        }
 
-  // Запуск
-  createStars();
-  startNormalStarTimer();
-  startSuperStarTimer();
-</script>
+        sendScore();
+
+        const plusText = document.createElement('div');
+        plusText.className = 'plus-one';
+        plusText.textContent = `+${reward}`;
+        plusText.style.color = color;
+        plusText.style.left = `${e.clientX}px`;
+        plusText.style.top = `${e.clientY}px`;
+        document.body.appendChild(plusText);
+        setTimeout(() => plusText.remove(), 1000);
+
+        createParticles(e.clientX, e.clientY);
+        head.remove();
+        tail.forEach(part => {
+          if (part.el.parentNode) part.el.remove();
+        });
+      });
+
+      container.appendChild(head);
+
+      setTimeout(() => {
+        if (head.parentNode) head.remove();
+        tail.forEach(part => {
+          if (part.el.parentNode) part.el.remove();
+        });
+      }, 4000);
+    }
+
+    // Частицы
+    function createParticles(x, y) {
+      const particleCount = 12;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+        document.body.appendChild(particle);
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+
+        let opacity = 1;
+        let posX = x;
+        let posY = y;
+
+        const animate = () => {
+          opacity -= 0.02;
+          posX += vx;
+          posY += vy;
+          particle.style.opacity = opacity;
+          particle.style.transform = `translate(${posX - x}px, ${posY - y}px)`;
+          if (opacity > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            particle.remove();
+          }
+        };
+        requestAnimationFrame(animate);
+      }
+    }
+
+    // Основной клик
+    function handleClick(e) {
+      e.preventDefault();
+      coins++;
+      coinsEl.textContent = coins;
+      localStorage.setItem(`coins_${userId}`, coins.toString());
+      sendScore();
+
+      const plusOne = document.createElement('div');
+      plusOne.className = 'plus-one';
+      plusOne.textContent = '+1';
+      plusOne.style.left = `${e.clientX}px`;
+      plusOne.style.top = `${e.clientY}px`;
+      document.body.appendChild(plusOne);
+      setTimeout(() => plusOne.remove(), 1000);
+
+      createParticles(e.clientX, e.clientY);
+
+      const fallingCoin = document.createElement('div');
+      fallingCoin.className = 'falling-coin';
+      fallingCoin.textContent = '💰';
+      fallingCoin.style.left = Math.random() * 100 + '%';
+      document.body.appendChild(fallingCoin);
+      setTimeout(() => fallingCoin.remove(), 3000);
+    }
+
+    document.body.addEventListener('click', handleClick);
+
+    // Запуск
+    createStars();
+    
+    function startNormalStarTimer() {
+      const delay = 8000 + Math.random() * 12000;
+      setTimeout(() => {
+        createCatchableStar(55, '#ffcc00');
+        startNormalStarTimer();
+      }, delay);
+    }
+
+    function startSuperStarTimer() {
+      const delay = 30000 + Math.random() * 30000;
+      setTimeout(() => {
+        createCatchableStar(100, '#cc00ff', true);
+        startSuperStarTimer();
+      }, delay);
+    }
+
+    startNormalStarTimer();
+    startSuperStarTimer();
+  </script>
 </body>
 </html>
