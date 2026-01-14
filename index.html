@@ -198,93 +198,86 @@
   </div>
 
   <script>
-    // Инициализация Telegram WebApp
-    let tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+  // Инициализация Telegram WebApp
+  let tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
 
-    // Сохранение очков
-    const userId = (tg?.initDataUnsafe?.user?.id || 'guest').toString();
-    let coins = parseInt(localStorage.getItem(`coins_${userId}`)) || 0;
-    const coinsEl = document.getElementById('coins');
+  // Сохранение очков
+  const userId = (tg?.initDataUnsafe?.user?.id || 'guest').toString();
+  let coins = parseInt(localStorage.getItem(`coins_${userId}`)) || 0;
+  const coinsEl = document.getElementById('coins');
+  coinsEl.textContent = coins;
+
+  // Создание частиц в указанной точке
+  function createParticles(x, y) {
+    const particleCount = 12;
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = `${x}px`;
+      particle.style.top = `${y}px`;
+      document.body.appendChild(particle);
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 4;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+
+      let opacity = 1;
+      let posX = x;
+      let posY = y;
+
+      const animate = () => {
+        opacity -= 0.02;
+        posX += vx;
+        posY += vy;
+        particle.style.opacity = opacity;
+        particle.style.transform = `translate(${posX - x}px, ${posY - y}px)`;
+
+        if (opacity > 0) {
+          requestAnimationFrame(animate);
+        } else {
+          particle.remove();
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }
+  }
+
+  // Обработчик клика — теперь всё привязано к точке клика
+  function handleClick(e) {
+    e.preventDefault();
+    coins++;
     coinsEl.textContent = coins;
+    localStorage.setItem(`coins_${userId}`, coins.toString());
 
-    // Создание частиц
-    function createParticles(x, y) {
-      const particleCount = 12;
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = `${x}px`;
-        particle.style.top = `${y}px`;
-        document.body.appendChild(particle);
+    // Анимация "+1" в месте клика
+    const plusOne = document.createElement('div');
+    plusOne.className = 'plus-one';
+    plusOne.textContent = '+1';
+    plusOne.style.left = `${e.clientX}px`;
+    plusOne.style.top = `${e.clientY}px`;
+    document.body.appendChild(plusOne);
+    setTimeout(() => plusOne.remove(), 1000);
 
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 3;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
+    // Частицы в месте клика
+    createParticles(e.clientX, e.clientY);
 
-        let opacity = 1;
-        let posX = x;
-        let posY = y;
+    // Падающая монетка (сверху)
+    const fallingCoin = document.createElement('div');
+    fallingCoin.className = 'falling-coin';
+    fallingCoin.textContent = '💰';
+    fallingCoin.style.left = Math.random() * 100 + '%';
+    document.body.appendChild(fallingCoin);
+    setTimeout(() => fallingCoin.remove(), 3000);
+  }
 
-        const animate = () => {
-          opacity -= 0.02;
-          posX += vx;
-          posY += vy;
-          particle.style.opacity = opacity;
-          particle.style.transform = `translate(${posX - x}px, ${posY - y}px)`;
-
-          if (opacity > 0) {
-            requestAnimationFrame(animate);
-          } else {
-            particle.remove();
-          }
-        };
-
-        requestAnimationFrame(animate);
-      }
-    }
-
-    // Обработчик клика — работает везде по центру!
-    function handleClick(e) {
-      e.preventDefault();
-      coins++;
-      coinsEl.textContent = coins;
-      localStorage.setItem(`coins_${userId}`, coins.toString());
-
-      // Анимация "+1"
-      const rect = document.querySelector('.coin-button').getBoundingClientRect();
-      const plusOne = document.createElement('div');
-      plusOne.className = 'plus-one';
-      plusOne.textContent = '+1';
-      plusOne.style.left = `${rect.left + rect.width / 2}px`;
-      plusOne.style.top = `${rect.top + rect.height / 2}px`;
-      document.body.appendChild(plusOne);
-      setTimeout(() => plusOne.remove(), 1000);
-
-      // Частицы из центра монетки
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      createParticles(centerX, centerY);
-
-      // Падающая монетка
-      const fallingCoin = document.createElement('div');
-      fallingCoin.className = 'falling-coin';
-      fallingCoin.textContent = '💰';
-      fallingCoin.style.left = Math.random() * 100 + '%';
-      document.body.appendChild(fallingCoin);
-      setTimeout(() => fallingCoin.remove(), 3000);
-    }
-
-    // Назначаем обработчик на ВЕСЬ BODY — клик везде считается!
-    document.body.addEventListener('click', (e) => {
-      // Опционально: можно ограничить зону (например, только вертикально по центру)
-      // Но сейчас — клик в любом месте работает
-      handleClick(e);
-    });
-  </script>
+  // Клик в любом месте экрана
+  document.body.addEventListener('click', handleClick);
+</script>
 </body>
 </html>
