@@ -67,6 +67,164 @@
       white-space: nowrap;
     }
 
+    /* Счётчик */
+    .coins-display {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(255,255,255,0.7);
+    }
+
+    /* Кнопка монетки */
+    .coin-button {
+      width: 140px;
+      height: 140px;
+      color: gold;
+      font-size: 4rem;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease, text-shadow 0.2s ease;
+      border-radius: 50%;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      background: transparent;
+      text-shadow: 0 0 10px rgba(255,215,0,0.8);
+      z-index: 20;
+    }
+
+    /* Кнопка "Лидеры" */
+    .leaders-btn {
+      position: absolute;
+      bottom: 30px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      z-index: 20;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .leaders-btn:hover, .leaders-btn:active {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* Оверлей лидеров */
+    .leaderboard-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .leaderboard-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .leaderboard-panel {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      width: 90%;
+      max-width: 500px;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .leaderboard-overlay.active .leaderboard-panel {
+      transform: translateY(0);
+    }
+
+    .leaderboard-title {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: gold;
+      text-shadow: 0 0 10px rgba(255,215,0,0.7);
+    }
+
+    .leader-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+
+    .leader-item:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .leader-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #667eea;
+      background: #333;
+    }
+
+    .leader-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .leader-info {
+      flex: 1;
+    }
+
+    .leader-name {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .leader-coins {
+      color: gold;
+      font-size: 1rem;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
     /* Анимированные звёздочки */
     .star {
       position: absolute;
@@ -89,33 +247,6 @@
       max-width: 90vw;
       width: 100%;
       z-index: 10;
-    }
-
-    .coins-display {
-      font-size: 2.5rem;
-      font-weight: bold;
-      margin-bottom: 20px;
-      text-shadow: 0 0 10px rgba(255,255,255,0.7);
-    }
-
-    .coin-button {
-      width: 140px;
-      height: 140px;
-      color: gold;
-      font-size: 4rem;
-      border: none;
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.2s ease, text-shadow 0.2s ease;
-      border-radius: 50%;
-      outline: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-      background: transparent;
-      text-shadow: 0 0 10px rgba(255,215,0,0.8);
-      z-index: 20;
     }
 
     .plus-one {
@@ -141,12 +272,15 @@
       }
     }
 
-    /* Падающие монетки */
-    .falling-coin {
+    .falling-coin,
+    .catchable-falling-star,
+    .particle {
       position: absolute;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .falling-coin {
       width: 40px;
       height: 40px;
       color: gold;
@@ -155,46 +289,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: fallCoin 3s linear forwards;
-      pointer-events: none;
-      z-index: -1;
-      background: transparent;
       text-shadow: 0 0 6px rgba(255,215,0,0.6);
+      animation: fallCoin 3s linear forwards;
     }
 
     @keyframes fallCoin {
       0% { transform: translateX(-50%) translateY(-50px); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
       100% { transform: translateX(-50%) translateY(100vh); opacity: 0; }
     }
 
-    /* Падающая звезда (обычная) */
     .catchable-falling-star {
-      position: absolute;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      pointer-events: auto;
-      z-index: 5;
       cursor: pointer;
     }
 
-    @keyframes fallDown {
-      from { transform: translate(0, 0); opacity: 1; }
-      to { transform: translate(20vw, 110vh); opacity: 0; }
-    }
-
-    /* Частицы */
     .particle {
-      position: absolute;
       width: 6px;
       height: 6px;
       background: gold;
       border-radius: 50%;
-      pointer-events: none;
       opacity: 0;
-      z-index: 25;
     }
 
     @media (max-width: 600px) {
@@ -210,6 +326,11 @@
         top: 10px;
         left: 10px;
         padding: 6px 12px;
+      }
+      .leaders-btn {
+        bottom: 20px;
+        padding: 10px 20px;
+        font-size: 1rem;
       }
     }
   </style>
@@ -229,6 +350,20 @@
     <button class="coin-button" id="coinBtn">💰</button>
   </div>
 
+  <!-- Кнопка Лидеры -->
+  <button class="leaders-btn" id="leadersBtn">🏆 Лидеры</button>
+
+  <!-- Оверлей лидеров -->
+  <div class="leaderboard-overlay" id="leaderboardOverlay">
+    <div class="leaderboard-panel">
+      <button class="close-btn" id="closeLeaderboard">&times;</button>
+      <div class="leaderboard-title">Топ игроков</div>
+      <div id="leaderboardList">
+        <div style="text-align:center; padding:20px; color:#aaa;">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = 'http://92.63.106.58:3000';
     let tg = window.Telegram?.WebApp;
@@ -241,7 +376,6 @@
     const userId = (user.id || 'guest').toString();
     const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
-    // Сохраняем имя и фото в localStorage
     localStorage.setItem(`username_${userId}`, username);
     if (user.photo_url) {
       localStorage.setItem(`photo_${userId}`, user.photo_url);
@@ -254,20 +388,17 @@
     const coinsEl = document.getElementById('coins');
     coinsEl.textContent = coins;
 
-    // Отображаем аватар и ник
+    // Аватар и ник
     const avatarEl = document.getElementById('avatar');
     const usernameEl = document.getElementById('username');
-
-    // Устанавливаем имя
     usernameEl.textContent = username;
-
-    // Устанавливаем аватар
     if (user.photo_url) {
       avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
     } else {
       avatarEl.textContent = '👤';
     }
 
+    // Отправка счёта
     async function sendScore() {
       try {
         const initData = tg?.initData || '';
@@ -284,6 +415,57 @@
       }
     }
 
+    // Загрузка лидеров
+    async function loadLeaderboard() {
+      const listEl = document.getElementById('leaderboardList');
+      try {
+        const res = await fetch(`${API_URL}/api/leaderboard`);
+        const leaders = await res.json();
+
+        if (leaders.length === 0) {
+          listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Пока нет лидеров</div>';
+          return;
+        }
+
+        listEl.innerHTML = leaders.map((player, i) => {
+          const photo = localStorage.getItem(`photo_${player.id}`) || '';
+          const avatarHtml = photo 
+            ? `<img src="${photo}" alt="Avatar">`
+            : `<div style="background:#333;color:#667eea;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:18px;">👤</div>`;
+          
+          return `
+            <div class="leader-item">
+              <div class="leader-avatar">${avatarHtml}</div>
+              <div class="leader-info">
+                <div class="leader-name">${player.name}</div>
+                <div class="leader-coins">Монет: ${player.coins}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        listEl.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Ошибка загрузки</div>';
+      }
+    }
+
+    // Открытие/закрытие таблицы
+    const overlay = document.getElementById('leaderboardOverlay');
+    document.getElementById('leadersBtn').addEventListener('click', () => {
+      overlay.classList.add('active');
+      loadLeaderboard();
+    });
+
+    document.getElementById('closeLeaderboard').addEventListener('click', () => {
+      overlay.classList.remove('active');
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove('active');
+      }
+    });
+
+    // === ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ ===
     function createStars() {
       const container = document.getElementById('stars-container');
       const starCount = 50;
