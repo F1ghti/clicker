@@ -132,14 +132,27 @@
 
     .leaderboard-panel,
     .achievements-panel {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      width: 90%; max-width: 500px;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      transform: translateY(20px);
-      transition: transform 0.3s ease;
-    }
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  width: 90%;
+  max-width: 500px;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+  max-height: 80vh;
+  overflow-y: auto; /* ✅ Прокрутка внутри панели */
+  -webkit-overflow-scrolling: touch; /* Плавность на iOS */
+}
+
+/* Скрываем полосу прокрутки (опционально) */
+.achievements-panel::-webkit-scrollbar {
+  display: none;
+}
+.achievements-panel {
+  -ms-overflow-style: none;  /* IE/Edge */
+  scrollbar-width: none;     /* Firefox */
+}
 
     .leaderboard-overlay.active .leaderboard-panel,
     .achievements-overlay.active .achievements-panel {
