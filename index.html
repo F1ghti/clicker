@@ -192,7 +192,6 @@
     }
 
     .falling-coin,
-    .catchable-falling-star,
     .particle {
       position: absolute;
       pointer-events: none;
@@ -213,12 +212,6 @@
     @keyframes fallCoin {
       0% { transform: translateX(-50%) translateY(-50px); opacity: 0; }
       100% { transform: translateX(-50%) translateY(100vh); opacity: 0; }
-    }
-    .catchable-falling-star {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      cursor: pointer;
     }
     .particle {
       width: 6px;
@@ -262,7 +255,9 @@
   </div>
 
   <script>
+    // ✅ ИСПРАВЛЕНО: убраны пробелы
     const API_URL = 'https://clicker-backend-1.onrender.com';
+    
     let tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
@@ -274,6 +269,8 @@
     const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
     let coins = 0;
+    let caughtStars = 0;
+    let caughtSuperStars = 0;
     const coinsEl = document.getElementById('coins');
     coinsEl.textContent = '...';
 
@@ -293,6 +290,8 @@
         const res = await fetch(`${API_URL}/api/user/${userId}`);
         const data = await res.json();
         coins = data.coins || 0;
+        caughtStars = data.caughtStars || 0;
+        caughtSuperStars = data.caughtSuperStars || 0;
         coinsEl.textContent = coins;
       } catch (e) {
         coinsEl.textContent = coins;
@@ -305,7 +304,13 @@
         await fetch(`${API_URL}/api/update-score`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, username, coins })
+          body: JSON.stringify({ 
+            userId, 
+            username, 
+            coins,
+            caughtStars,
+            caughtSuperStars
+          })
         });
       } catch (e) {
         console.warn('Ошибка отправки:', e);
@@ -341,14 +346,14 @@
     // Инициализация
     loadUserData();
 
-    // Клик
+    // Клик по монетке
     function handleClick(e) {
       e.preventDefault();
       coins++;
       coinsEl.textContent = coins;
       sendScore();
 
-      // Анимации (частицы, +1 и т.д.) — без изменений
+      // Анимации
       const plusOne = document.createElement('div');
       plusOne.className = 'plus-one';
       plusOne.textContent = '+1';
@@ -404,7 +409,7 @@
       if (e.target === overlay) overlay.classList.remove('active');
     });
 
-    // Звёзды (без изменений)
+    // Фоновые звёзды
     function createStars() {
       const container = document.getElementById('stars-container');
       for (let i = 0; i < 50; i++) {
@@ -428,6 +433,125 @@
       }
     }
     createStars();
+
+    // ✨ ПАДАЮЩИЕ ЗВЁЗДЫ БЕЗ ХВОСТА
+    function createCatchableStar(reward, isSuper = false) {
+      const container = document.getElementById('stars-container');
+      const star = document.createElement('div');
+      
+      // Стили звезды
+      star.style.position = 'absolute';
+      star.style.width = isSuper ? '14px' : '10px';
+      star.style.height = isSuper ? '14px' : '10px';
+      star.style.borderRadius = '50%';
+      star.style.background = '#fff'; // Ярко-белая!
+      star.style.boxShadow = isSuper 
+        ? '0 0 20px #fff, 0 0 30px #cc00ff' 
+        : '0 0 15px #fff, 0 0 25px #ffcc00';
+      star.style.cursor = 'pointer';
+      star.style.zIndex = '10';
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = '-15%';
+
+      // Анимация падения
+      const startX = parseFloat(star.style.left);
+      const endX = startX + (Math.random() * 20 - 10);
+      const duration = isSuper ? 5000 : 4000;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const currentY = -15 + progress * 130;
+        const currentX = startX + (endX - startX) * progress;
+        
+        star.style.top = `${currentY}%`;
+        star.style.left = `${currentX}%`;
+        star.style.opacity = 1 - progress * 0.7;
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          if (star.parentNode) star.remove();
+        }
+      };
+
+      // Обработка клика
+      star.addEventListener('click', (e) => {
+        e.stopPropagation();
+        coins += reward;
+        coinsEl.textContent = coins;
+        sendScore();
+
+        // Сохраняем пойманные звёзды
+        if (reward === 55) {
+          caughtStars++;
+        } else if (reward === 100) {
+          caughtSuperStars++;
+        }
+
+        // Эффект "+55" или "+100"
+        const plusText = document.createElement('div');
+        plusText.className = 'plus-one';
+        plusText.textContent = `+${reward}`;
+        plusText.style.color = isSuper ? '#cc00ff' : '#ffcc00';
+        plusText.style.left = `${e.clientX}px`;
+        plusText.style.top = `${e.clientY}px`;
+        document.body.appendChild(plusText);
+        setTimeout(() => plusText.remove(), 1000);
+
+        // Частицы
+        const particleCount = 12;
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'particle';
+          particle.style.left = `${e.clientX}px`;
+          particle.style.top = `${e.clientY}px`;
+          particle.style.background = isSuper ? '#cc00ff' : '#ffcc00';
+          document.body.appendChild(particle);
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 4;
+          const vx = Math.cos(angle) * speed;
+          const vy = Math.sin(angle) * speed;
+          let opacity = 1, posX = e.clientX, posY = e.clientY;
+          const animate = () => {
+            opacity -= 0.02;
+            posX += vx;
+            posY += vy;
+            particle.style.opacity = opacity;
+            particle.style.transform = `translate(${posX - e.clientX}px, ${posY - e.clientY}px)`;
+            if (opacity > 0) requestAnimationFrame(animate);
+            else particle.remove();
+          };
+          requestAnimationFrame(animate);
+        }
+
+        star.remove();
+      });
+
+      container.appendChild(star);
+      animate();
+    }
+
+    // Таймеры для звёзд
+    function startNormalStarTimer() {
+      const delay = 8000 + Math.random() * 12000;
+      setTimeout(() => {
+        createCatchableStar(55, false);
+        startNormalStarTimer();
+      }, delay);
+    }
+
+    function startSuperStarTimer() {
+      const delay = 30000 + Math.random() * 30000;
+      setTimeout(() => {
+        createCatchableStar(100, true);
+        startSuperStarTimer();
+      }, delay);
+    }
+
+    startNormalStarTimer();
+    startSuperStarTimer();
   </script>
 </body>
 </html>
