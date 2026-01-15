@@ -89,6 +89,28 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
+    .achievements-btn {
+  position: absolute;
+  bottom: 80px;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+  color: #333;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.achievements-btn:hover, .achievements-btn:active {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+    
+
     .leaderboard-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -243,6 +265,7 @@
   </div>
 
   <button class="leaders-btn" id="leadersBtn">🏆 Лидеры</button>
+  <button class="achievements-btn" id="achievementsBtn">🏆 Достижения</button>
 
   <div class="leaderboard-overlay" id="leaderboardOverlay">
     <div class="leaderboard-panel">
@@ -256,25 +279,26 @@
 
   <script>
     // ✅ ИСПРАВЛЕНО: убраны пробелы
-    const API_URL = 'https://clicker-backend-1.onrender.com';
-    
-    let tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
+    // ✅ ИСПРАВЛЕНО: убраны пробелы
+const API_URL = 'https://clicker-backend-1.onrender.com';
 
-    const user = tg?.initDataUnsafe?.user || {};
-    const userId = (user.id || 'guest').toString();
-    const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
+let tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+}
 
-    let coins = 0;
-    let caughtStars = 0;
-    let caughtSuperStars = 0;
-    const coinsEl = document.getElementById('coins');
-    coinsEl.textContent = '...';
+const user = tg?.initDataUnsafe?.user || {};
+const userId = (user.id || 'guest').toString();
+const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
-    // === СИСТЕМА ДОСТИЖЕНИЙ ===
+let coins = 0;
+let caughtStars = 0;
+let caughtSuperStars = 0;
+const coinsEl = document.getElementById('coins');
+coinsEl.textContent = '...';
+
+// === СИСТЕМА ДОСТИЖЕНИЙ ===
 const achievements = [
   { id: 'first_click', name: 'Первый шаг', desc: 'Сделать первый клик', target: 1, type: 'coins' },
   { id: 'click_100', name: 'Активный игрок', desc: 'Накликать 100 монет', target: 100, type: 'coins' },
@@ -362,8 +386,8 @@ function showAchievementPopup(title, desc) {
     if (style.parentNode) style.remove();
   }, 3000);
 }
-    checkAchievements();
 // === КОНЕЦ СИСТЕМЫ ДОСТИЖЕНИЙ ===
+
 
     // Аватар и ник
     const avatarEl = document.getElementById('avatar');
@@ -645,6 +669,23 @@ function showAchievementPopup(title, desc) {
 
     startNormalStarTimer();
     startSuperStarTimer();
+
+    async function loadUserData() {
+  try {
+    const res = await fetch(`${API_URL}/api/user/${userId}`);
+    const data = await res.json();
+    coins = data.coins || 0;
+    caughtStars = data.caughtStars || 0;
+    caughtSuperStars = data.caughtSuperStars || 0;
+    coinsEl.textContent = coins;
+    
+    // ✅ Проверяем достижения ПОСЛЕ загрузки данных
+    checkAchievements();
+  } catch (e) {
+    coinsEl.textContent = coins;
+  }
+}
+    
   </script>
 </body>
 </html>
