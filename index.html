@@ -670,7 +670,8 @@ function showAchievementPopup(title, desc) {
     startNormalStarTimer();
     startSuperStarTimer();
 
-    async function loadUserData() {
+    // Загружаем счёт с сервера
+async function loadUserData() {
   try {
     const res = await fetch(`${API_URL}/api/user/${userId}`);
     const data = await res.json();
