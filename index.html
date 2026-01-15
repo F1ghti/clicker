@@ -39,6 +39,13 @@
       border-radius: 20px;
       z-index: 20;
     }
+    .user-info.bg-space {
+      background: rgba(15, 12, 41, 0.7) !important;
+    }
+    .user-info.bg-galaxy {
+      background: rgba(26, 26, 46, 0.7) !important;
+    }
+
     .avatar {
       width: 40px;
       height: 40px;
@@ -189,6 +196,18 @@
       margin-bottom: 10px;
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
+    }
+
+    /* Фоны для лидерборда */
+    .leader-item.bg-space {
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    }
+
+    .leader-item.bg-galaxy {
+      background: radial-gradient(circle, #1a1a2e, #16213e, #0f3460);
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1) 2px, transparent 3px),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 1px, transparent 2px);
     }
 
     .leader-avatar,
@@ -352,7 +371,7 @@
   </style>
 </head>
 <body>
-  <div class="user-info">
+  <div class="user-info" id="userInfo">
     <div class="avatar" id="avatar">👤</div>
     <div class="username" id="username">Загрузка...</div>
   </div>
@@ -404,7 +423,6 @@
   </div>
 
   <script>
-    // ✅ ИСПРАВЛЕНО: убраны пробелы
     const API_URL = 'https://clicker-backend-1.onrender.com';
 
     let tg = window.Telegram?.WebApp;
@@ -417,7 +435,6 @@
     const userId = (user.id || 'guest').toString();
     const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
-    // Проверяем реферальный ID из URL
     const urlParams = new URLSearchParams(window.location.search);
     const referrerId = urlParams.get('ref') || null;
 
@@ -435,26 +452,22 @@
     const levelEl = document.getElementById('level');
     const avatarEl = document.getElementById('avatar');
     const usernameEl = document.getElementById('username');
+    const userInfoEl = document.getElementById('userInfo');
 
-    // Эмодзи для кастомизации
     const avatarEmojis = {
       hat: { cowboy: '🤠', wizard: '🧙', crown: '👑' },
-      glasses: { sunglasses: '🕶️', nerd: '👓' },
-      background: { space: '🌌', fire: '🔥' }
+      glasses: { sunglasses: '🕶️', nerd: '👓' }
     };
 
-    // Рассчитываем уровень
     function calculateLevel(coins) {
       return Math.floor(coins / 1000) + 1;
     }
 
-    // Обновляем отображение уровня
     function updateLevelDisplay() {
       level = calculateLevel(coins);
       levelEl.textContent = level;
     }
 
-    // Отображаем аватар
     function renderAvatar() {
       let emoji = '👤';
       
@@ -465,9 +478,14 @@
       }
       
       avatarEl.textContent = emoji;
+      
+      // Обновляем фон профиля
+      userInfoEl.className = 'user-info';
+      if (avatarStyle.background) {
+        userInfoEl.classList.add(`bg-${avatarStyle.background}`);
+      }
     }
 
-    // === СИСТЕМА ДОСТИЖЕНИЙ ===
     const achievements = [
       { id: 'first_click', name: 'Первый шаг', desc: 'Сделать первый клик', target: 1, type: 'coins' },
       { id: 'click_100', name: 'Активный игрок', desc: 'Накликать 100 монет', target: 100, type: 'coins' },
@@ -553,9 +571,7 @@
         if (style.parentNode) style.remove();
       }, 3000);
     }
-    // === КОНЕЦ СИСТЕМЫ ДОСТИЖЕНИЙ ===
 
-    // === МАГАЗИН ===
     const shopItems = [
       { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle', currency: 'coins' },
       { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle', currency: 'coins' },
@@ -637,9 +653,7 @@
         });
       });
     }
-    // === КОНЕЦ МАГАЗИНА ===
 
-    // Применение улучшений
     function applyUpgrades() {
       window.clickMultiplier = isUnlocked('double_click') ? 2 : 1;
       
@@ -656,7 +670,6 @@
       }
     }
 
-    // Аватар и ник
     usernameEl.textContent = username;
     if (user.photo_url && !Object.keys(avatarStyle).length) {
       avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
@@ -664,7 +677,6 @@
       renderAvatar();
     }
 
-    // Загружаем данные с сервера
     async function loadUserData() {
       try {
         const res = await fetch(`${API_URL}/api/user/${userId}`);
@@ -691,7 +703,6 @@
       }
     }
 
-    // Отправка данных на сервер
     async function sendScore() {
       try {
         await fetch(`${API_URL}/api/update-score`, {
@@ -714,7 +725,6 @@
       }
     }
 
-    // Загрузка лидеров
     async function loadLeaderboard() {
       const listEl = document.getElementById('leaderboardList');
       try {
@@ -728,14 +738,20 @@
 
         listEl.innerHTML = leaders.map(player => {
           let avatarHtml = '👤';
+          let backgroundClass = '';
+          
           if (player.avatarStyle?.hat) {
             avatarHtml = avatarEmojis.hat[player.avatarStyle.hat] || '🤠';
           } else if (player.avatarStyle?.glasses) {
             avatarHtml = avatarEmojis.glasses[player.avatarStyle.glasses] || '🕶️';
           }
           
+          if (player.avatarStyle?.background) {
+            backgroundClass = `bg-${player.avatarStyle.background}`;
+          }
+          
           return `
-            <div class="leader-item">
+            <div class="leader-item ${backgroundClass}">
               <div class="leader-avatar">${avatarHtml}</div>
               <div class="leader-info">
                 <div class="leader-name">${player.name}</div>
@@ -749,7 +765,6 @@
       }
     }
 
-    // Загрузка достижений
     function loadAchievements() {
       const listEl = document.getElementById('achievementsList');
       
@@ -775,17 +790,14 @@
       }).join('');
     }
 
-    // Инициализация
     loadUserData();
 
-    // Клик по монетке
     function handleClick(e) {
       e.preventDefault();
       coins += (window.clickMultiplier || 1);
       coinsEl.textContent = coins;
       updateLevelDisplay();
       
-      // Зарабатываем звёзды за клики
       if (coins % 100 === 0) {
         stars++;
         starsEl.textContent = stars;
@@ -794,7 +806,6 @@
       sendScore();
       checkAchievements();
       
-      // Анимации
       const plusOne = document.createElement('div');
       plusOne.className = 'plus-one';
       plusOne.textContent = `+${window.clickMultiplier || 1}`;
@@ -837,7 +848,6 @@
 
     document.body.addEventListener('click', handleClick);
 
-    // Обработчики кнопок
     document.getElementById('leadersBtn').addEventListener('click', () => {
       document.getElementById('leaderboardOverlay').classList.add('active');
       loadLeaderboard();
@@ -853,14 +863,12 @@
       renderShop();
     });
 
-    // Закрытие оверлеев
     ['closeLeaderboard', 'closeAchievements', 'closeShop'].forEach(id => {
       document.getElementById(id).addEventListener('click', (e) => {
         e.target.closest('.leaderboard-overlay, .achievements-overlay, .shop-overlay').classList.remove('active');
       });
     });
 
-    // Фоновые звёзды
     function createStars() {
       const container = document.getElementById('stars-container');
       for (let i = 0; i < 50; i++) {
@@ -885,7 +893,6 @@
     }
     createStars();
 
-    // Падающие звёзды
     function createCatchableStar(reward, isSuper = false) {
       const container = document.getElementById('stars-container');
       const star = document.createElement('div');
@@ -941,7 +948,7 @@
         if (reward === 55) caughtStars++;
         else if (reward === 100) {
           caughtSuperStars++;
-          stars++; // Получаем премиум-валюту за суперзвезду
+          stars++;
           starsEl.textContent = stars;
         }
 
@@ -990,7 +997,6 @@
       animate();
     }
 
-    // Таймеры для звёзд
     function startNormalStarTimer() {
       const delay = 8000 + Math.random() * 12000;
       setTimeout(() => {
