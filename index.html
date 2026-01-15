@@ -404,6 +404,7 @@
   </div>
 
   <script>
+    // ✅ ИСПРАВЛЕНО: убраны пробелы
     const API_URL = 'https://clicker-backend-1.onrender.com';
 
     let tg = window.Telegram?.WebApp;
@@ -556,12 +557,14 @@
 
     // === МАГАЗИН ===
     const shopItems = [
-      { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle' },
-      { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle' },
-      { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable' },
-      { id: 'hat_cowboy', name: 'Ковбойская шляпа', desc: 'Выглядит круто!', price: 500, type: 'avatar', category: 'hat' },
-      { id: 'glasses_sunglasses', name: 'Очки', desc: 'Стильный образ', price: 300, type: 'avatar', category: 'glasses' },
-      { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'avatar', category: 'background' }
+      { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle', currency: 'coins' },
+      { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle', currency: 'coins' },
+      { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable', currency: 'coins' },
+      { id: 'hat_cowboy', name: 'Ковбойская шляпа', desc: 'Выглядит круто!', price: 500, type: 'avatar', category: 'hat', currency: 'coins' },
+      { id: 'glasses_sunglasses', name: 'Очки', desc: 'Стильный образ', price: 300, type: 'avatar', category: 'glasses', currency: 'coins' },
+      { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'avatar', category: 'background', currency: 'coins' },
+      { id: 'hat_crown', name: 'Корона', desc: 'Вы король кликера!', price: 10, type: 'avatar', category: 'hat', currency: 'stars' },
+      { id: 'bg_galaxy', name: 'Галактика', desc: 'Фон из далёких звёзд', price: 20, type: 'avatar', category: 'background', currency: 'stars' }
     ];
 
     function isUnlocked(itemId) {
@@ -577,8 +580,9 @@
       
       listEl.innerHTML = shopItems.map(item => {
         const isBought = isUnlocked(item.id);
-        const isDisabled = coins < item.price && !isBought;
+        const isDisabled = (item.currency === 'stars' ? stars < item.price : coins < item.price) && !isBought;
         const btnText = isBought ? 'Куплено' : 'Купить';
+        const priceDisplay = item.currency === 'stars' ? `💎${item.price}` : item.price;
         
         return `
           <div class="shop-item ${isDisabled ? 'disabled' : ''}">
@@ -587,7 +591,7 @@
               <p>${item.desc}</p>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
-              <div class="shop-price">${item.price}</div>
+              <div class="shop-price">${priceDisplay}</div>
               <button class="buy-btn" data-id="${item.id}" ${isBought ? 'disabled' : ''} ${isDisabled ? 'disabled' : ''}>
                 ${btnText}
               </button>
@@ -601,10 +605,19 @@
           const id = btn.dataset.id;
           const item = shopItems.find(i => i.id === id);
           
-          if (coins >= item.price && !isUnlocked(id)) {
-            coins -= item.price;
-            coinsEl.textContent = coins;
-            
+          if (!isUnlocked(id)) {
+            if (item.currency === 'stars') {
+              if (stars >= item.price) {
+                stars -= item.price;
+                starsEl.textContent = stars;
+              } else return;
+            } else {
+              if (coins >= item.price) {
+                coins -= item.price;
+                coinsEl.textContent = coins;
+              } else return;
+            }
+
             if (item.type === 'toggle') {
               upgrades[id] = true;
               saveUpgrades();
