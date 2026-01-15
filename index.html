@@ -274,6 +274,97 @@
     const coinsEl = document.getElementById('coins');
     coinsEl.textContent = '...';
 
+    // === СИСТЕМА ДОСТИЖЕНИЙ ===
+const achievements = [
+  { id: 'first_click', name: 'Первый шаг', desc: 'Сделать первый клик', target: 1, type: 'coins' },
+  { id: 'click_100', name: 'Активный игрок', desc: 'Накликать 100 монет', target: 100, type: 'coins' },
+  { id: 'click_500', name: 'Клик-мастер', desc: 'Накликать 500 монет', target: 500, type: 'coins' },
+  { id: 'click_1000', name: 'Миллионер', desc: 'Накликать 1000 монет', target: 1000, type: 'coins' },
+  { id: 'star_1', name: 'Первая звезда', desc: 'Поймать первую звезду (+55)', target: 1, type: 'stars' },
+  { id: 'star_5', name: 'Охотник за звёздами', desc: 'Поймать 5 звёзд', target: 5, type: 'stars' },
+  { id: 'star_10', name: 'Звёздный собиратель', desc: 'Поймать 10 звёзд', target: 10, type: 'stars' },
+  { id: 'superstar_1', name: 'Космический герой', desc: 'Поймать редкую звезду (+100)', target: 1, type: 'superstars' },
+  { id: 'superstar_3', name: 'Легенда галактики', desc: 'Поймать 3 редкие звезды', target: 3, type: 'superstars' }
+];
+
+let unlockedAchievements = JSON.parse(localStorage.getItem('unlocked_achievements') || '[]');
+
+function checkAchievements() {
+  let newUnlocked = false;
+
+  achievements.forEach(ach => {
+    if (unlockedAchievements.includes(ach.id)) return;
+
+    let currentValue = 0;
+    if (ach.type === 'coins') currentValue = coins;
+    else if (ach.type === 'stars') currentValue = caughtStars;
+    else if (ach.type === 'superstars') currentValue = caughtSuperStars;
+
+    if (currentValue >= ach.target) {
+      unlockedAchievements.push(ach.id);
+      newUnlocked = true;
+      showAchievementPopup(ach.name, ach.desc);
+    }
+  });
+
+  // Секретное достижение
+  if (!unlockedAchievements.includes('secret_trio') && 
+      coins >= 100 && caughtStars >= 1 && caughtSuperStars >= 1) {
+    unlockedAchievements.push('secret_trio');
+    newUnlocked = true;
+    showAchievementPopup('Триумф!', 'Получить 100 монет, звезду и суперзвезду!');
+  }
+
+  if (newUnlocked) {
+    localStorage.setItem('unlocked_achievements', JSON.stringify(unlockedAchievements));
+  }
+}
+
+function showAchievementPopup(title, desc) {
+  const popup = document.createElement('div');
+  popup.innerHTML = `
+    <div style="
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      z-index: 9999;
+      font-weight: bold;
+      text-align: center;
+      max-width: 80%;
+      animation: slideInUp 0.5s, fadeOut 0.5s 2.5s forwards;
+    ">
+      🏆 ${title}<br><small>${desc}</small>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  // Анимации
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideInUp {
+      from { transform: translateX(-50%) translateY(100%); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  setTimeout(() => {
+    if (popup.parentNode) popup.remove();
+    if (style.parentNode) style.remove();
+  }, 3000);
+}
+    checkAchievements();
+// === КОНЕЦ СИСТЕМЫ ДОСТИЖЕНИЙ ===
+
     // Аватар и ник
     const avatarEl = document.getElementById('avatar');
     const usernameEl = document.getElementById('username');
@@ -489,6 +580,8 @@
         } else if (reward === 100) {
           caughtSuperStars++;
         }
+
+        checkAchievements();
 
         // Эффект "+55" или "+100"
         const plusText = document.createElement('div');
