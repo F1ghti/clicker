@@ -54,11 +54,23 @@
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .username { font-size: 1.2rem; font-weight: bold; white-space: nowrap; }
 
+    .level-display {
+      font-size: 1.2rem;
+      color: #aaa;
+      margin-bottom: 5px;
+    }
+
     .coins-display {
       font-size: 2.5rem;
       font-weight: bold;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       text-shadow: 0 0 10px rgba(255,255,255,0.7);
+    }
+
+    .stars-display {
+      font-size: 1.4rem;
+      color: #ffcc00;
+      margin-bottom: 15px;
     }
 
     .coin-button {
@@ -74,9 +86,8 @@
       z-index: 20;
     }
 
-    .leaders-btn {
+    .leaders-btn, .achievements-btn, .shop-btn {
       position: absolute;
-      bottom: 30px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
       border: none;
@@ -87,49 +98,26 @@
       cursor: pointer;
       z-index: 20;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-
     .achievements-btn {
-      position: absolute;
-      bottom: 80px;
       background: linear-gradient(135deg, #ff9a9e, #fad0c4);
       color: #333;
-      border: none;
-      padding: 12px 24px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      border-radius: 30px;
-      cursor: pointer;
-      z-index: 20;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      transition: transform 0.2s, box-shadow 0.2s;
     }
-
-    .achievements-btn:hover, .achievements-btn:active {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
-
     .shop-btn {
-      position: absolute;
-      bottom: 130px;
       background: linear-gradient(135deg, #ffd89b, #19547b);
       color: #333;
-      border: none;
-      padding: 12px 24px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      border-radius: 30px;
-      cursor: pointer;
-      z-index: 20;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .shop-btn:hover, .shop-btn:active {
+    .leaders-btn:hover, .achievements-btn:hover, .shop-btn:hover,
+    .leaders-btn:active, .achievements-btn:active, .shop-btn:active {
       transform: scale(1.05);
       box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
+
+    .leaders-btn { bottom: 30px; }
+    .achievements-btn { bottom: 80px; }
+    .shop-btn { bottom: 130px; }
 
     /* Оверлеи */
     .leaderboard-overlay,
@@ -372,7 +360,9 @@
   <div id="stars-container"></div>
 
   <div class="container">
+    <div class="level-display">Уровень: <span id="level">1</span></div>
     <div class="coins-display">Монет: <span id="coins">0</span></div>
+    <div class="stars-display">💎 Звёзд: <span id="stars">0</span></div>
     <button class="coin-button" id="coinBtn">💰</button>
   </div>
 
@@ -414,7 +404,6 @@
   </div>
 
   <script>
-    // ✅ ИСПРАВЛЕНО: убраны пробелы
     const API_URL = 'https://clicker-backend-1.onrender.com';
 
     let tg = window.Telegram?.WebApp;
@@ -427,99 +416,54 @@
     const userId = (user.id || 'guest').toString();
     const username = user.username ? `@${user.username}` : (user.first_name || 'Player');
 
+    // Проверяем реферальный ID из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const referrerId = urlParams.get('ref') || null;
+
     let coins = 0;
+    let stars = 0;
+    let level = 1;
     let caughtStars = 0;
     let caughtSuperStars = 0;
-    const coinsEl = document.getElementById('coins');
-    coinsEl.textContent = '...';
-
-    // Состояние улучшений
+    let avatarStyle = {};
     let upgrades = JSON.parse(localStorage.getItem('upgrades') || '{}');
+    let unlockedAchievements = JSON.parse(localStorage.getItem('unlocked_achievements') || '[]');
 
-    // Список товаров
-    const shopItems = [
-      { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle' },
-      { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle' },
-      { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable' },
-      { id: 'star_speed', name: 'Ускорение звёзд', desc: 'Звёзды появляются в 2 раза чаще', price: 300, type: 'toggle' }
-    ];
+    const coinsEl = document.getElementById('coins');
+    const starsEl = document.getElementById('stars');
+    const levelEl = document.getElementById('level');
+    const avatarEl = document.getElementById('avatar');
+    const usernameEl = document.getElementById('username');
 
-    // Проверка, куплено ли улучшение
-    function isUnlocked(itemId) {
-      return upgrades[itemId] === true;
+    // Эмодзи для кастомизации
+    const avatarEmojis = {
+      hat: { cowboy: '🤠', wizard: '🧙', crown: '👑' },
+      glasses: { sunglasses: '🕶️', nerd: '👓' },
+      background: { space: '🌌', fire: '🔥' }
+    };
+
+    // Рассчитываем уровень
+    function calculateLevel(coins) {
+      return Math.floor(coins / 1000) + 1;
     }
 
-    // Сохранение улучшений
-    function saveUpgrades() {
-      localStorage.setItem('upgrades', JSON.stringify(upgrades));
+    // Обновляем отображение уровня
+    function updateLevelDisplay() {
+      level = calculateLevel(coins);
+      levelEl.textContent = level;
     }
 
-    // Обновление магазина
-    function renderShop() {
-      const listEl = document.getElementById('shopList');
+    // Отображаем аватар
+    function renderAvatar() {
+      let emoji = '👤';
       
-      listEl.innerHTML = shopItems.map(item => {
-        const isBought = isUnlocked(item.id);
-        const isDisabled = coins < item.price && !isBought;
-        const btnText = isBought ? 'Куплено' : 'Купить';
-        
-        return `
-          <div class="shop-item ${isDisabled ? 'disabled' : ''}">
-            <div class="shop-info">
-              <h3>${item.name}</h3>
-              <p>${item.desc}</p>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <div class="shop-price">${item.price}</div>
-              <button class="buy-btn" data-id="${item.id}" ${isBought ? 'disabled' : ''} ${isDisabled ? 'disabled' : ''}>
-                ${btnText}
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      // Обработчики покупок
-      document.querySelectorAll('.buy-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          const item = shopItems.find(i => i.id === id);
-          
-          if (coins >= item.price && !isUnlocked(id)) {
-            coins -= item.price;
-            coinsEl.textContent = coins;
-            sendScore();
-            
-            if (item.type === 'toggle') {
-              upgrades[id] = true;
-              saveUpgrades();
-              applyUpgrades();
-            } else if (item.type === 'consumable') {
-              if (id === 'gold_star') {
-                createCatchableStar(200, true);
-              }
-            }
-            
-            renderShop();
-          }
-        });
-      });
-    }
-
-    // Применение улучшений
-    function applyUpgrades() {
-      window.clickMultiplier = isUnlocked('double_click') ? 2 : 1;
-      
-      if (isUnlocked('auto_clicker') && !window.autoClickerInterval) {
-        window.autoClickerInterval = setInterval(() => {
-          coins += window.clickMultiplier || 1;
-          coinsEl.textContent = coins;
-          sendScore();
-        }, 2000);
-      } else if (!isUnlocked('auto_clicker') && window.autoClickerInterval) {
-        clearInterval(window.autoClickerInterval);
-        window.autoClickerInterval = null;
+      if (avatarStyle.hat) {
+        emoji = avatarEmojis.hat[avatarStyle.hat] || '🤠';
+      } else if (avatarStyle.glasses) {
+        emoji = avatarEmojis.glasses[avatarStyle.glasses] || '🕶️';
       }
+      
+      avatarEl.textContent = emoji;
     }
 
     // === СИСТЕМА ДОСТИЖЕНИЙ ===
@@ -536,8 +480,6 @@
       { id: 'superstar_1', name: 'Космический герой', desc: 'Поймать редкую звезду (+100)', target: 1, type: 'superstars' },
       { id: 'superstar_3', name: 'Легенда галактики', desc: 'Поймать 3 редкие звезды', target: 3, type: 'superstars' }
     ];
-
-    let unlockedAchievements = JSON.parse(localStorage.getItem('unlocked_achievements') || '[]');
 
     function checkAchievements() {
       let newUnlocked = false;
@@ -612,33 +554,131 @@
     }
     // === КОНЕЦ СИСТЕМЫ ДОСТИЖЕНИЙ ===
 
-    // Аватар и ник
-    const avatarEl = document.getElementById('avatar');
-    const usernameEl = document.getElementById('username');
-    usernameEl.textContent = username;
-    if (user.photo_url) {
-      avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
-    } else {
-      avatarEl.textContent = '👤';
+    // === МАГАЗИН ===
+    const shopItems = [
+      { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle' },
+      { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle' },
+      { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable' },
+      { id: 'hat_cowboy', name: 'Ковбойская шляпа', desc: 'Выглядит круто!', price: 500, type: 'avatar', category: 'hat' },
+      { id: 'glasses_sunglasses', name: 'Очки', desc: 'Стильный образ', price: 300, type: 'avatar', category: 'glasses' },
+      { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'avatar', category: 'background' }
+    ];
+
+    function isUnlocked(itemId) {
+      return upgrades[itemId] === true;
     }
 
-    // Загружаем счёт с сервера
+    function saveUpgrades() {
+      localStorage.setItem('upgrades', JSON.stringify(upgrades));
+    }
+
+    function renderShop() {
+      const listEl = document.getElementById('shopList');
+      
+      listEl.innerHTML = shopItems.map(item => {
+        const isBought = isUnlocked(item.id);
+        const isDisabled = coins < item.price && !isBought;
+        const btnText = isBought ? 'Куплено' : 'Купить';
+        
+        return `
+          <div class="shop-item ${isDisabled ? 'disabled' : ''}">
+            <div class="shop-info">
+              <h3>${item.name}</h3>
+              <p>${item.desc}</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div class="shop-price">${item.price}</div>
+              <button class="buy-btn" data-id="${item.id}" ${isBought ? 'disabled' : ''} ${isDisabled ? 'disabled' : ''}>
+                ${btnText}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.buy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const item = shopItems.find(i => i.id === id);
+          
+          if (coins >= item.price && !isUnlocked(id)) {
+            coins -= item.price;
+            coinsEl.textContent = coins;
+            
+            if (item.type === 'toggle') {
+              upgrades[id] = true;
+              saveUpgrades();
+              applyUpgrades();
+            } else if (item.type === 'consumable') {
+              if (id === 'gold_star') {
+                createCatchableStar(200, true);
+              }
+            } else if (item.type === 'avatar') {
+              avatarStyle[item.category] = item.id.replace(`${item.category}_`, '');
+              renderAvatar();
+            }
+            
+            sendScore();
+            renderShop();
+          }
+        });
+      });
+    }
+    // === КОНЕЦ МАГАЗИНА ===
+
+    // Применение улучшений
+    function applyUpgrades() {
+      window.clickMultiplier = isUnlocked('double_click') ? 2 : 1;
+      
+      if (isUnlocked('auto_clicker') && !window.autoClickerInterval) {
+        window.autoClickerInterval = setInterval(() => {
+          coins += window.clickMultiplier || 1;
+          coinsEl.textContent = coins;
+          updateLevelDisplay();
+          sendScore();
+        }, 2000);
+      } else if (!isUnlocked('auto_clicker') && window.autoClickerInterval) {
+        clearInterval(window.autoClickerInterval);
+        window.autoClickerInterval = null;
+      }
+    }
+
+    // Аватар и ник
+    usernameEl.textContent = username;
+    if (user.photo_url && !Object.keys(avatarStyle).length) {
+      avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
+    } else {
+      renderAvatar();
+    }
+
+    // Загружаем данные с сервера
     async function loadUserData() {
       try {
         const res = await fetch(`${API_URL}/api/user/${userId}`);
         const data = await res.json();
+        
         coins = data.coins || 0;
+        stars = data.stars || 0;
+        level = data.level || 1;
+        avatarStyle = data.avatarStyle || {};
         caughtStars = data.caughtStars || 0;
         caughtSuperStars = data.caughtSuperStars || 0;
+        
         coinsEl.textContent = coins;
+        starsEl.textContent = stars;
+        levelEl.textContent = level;
+        
+        renderAvatar();
         checkAchievements();
         applyUpgrades();
       } catch (e) {
         coinsEl.textContent = coins;
+        starsEl.textContent = stars;
+        levelEl.textContent = level;
       }
     }
 
-    // Отправка счёта
+    // Отправка данных на сервер
     async function sendScore() {
       try {
         await fetch(`${API_URL}/api/update-score`, {
@@ -648,6 +688,10 @@
             userId, 
             username, 
             coins,
+            stars,
+            level,
+            avatarStyle,
+            referrerId,
             caughtStars,
             caughtSuperStars
           })
@@ -669,15 +713,24 @@
           return;
         }
 
-        listEl.innerHTML = leaders.map(player => `
-          <div class="leader-item">
-            <div class="leader-avatar">${player.photo_url ? `<img src="${player.photo_url}" alt="Avatar">` : '👤'}</div>
-            <div class="leader-info">
-              <div class="leader-name">${player.name}</div>
-              <div class="leader-coins">Монет: ${player.coins}</div>
+        listEl.innerHTML = leaders.map(player => {
+          let avatarHtml = '👤';
+          if (player.avatarStyle?.hat) {
+            avatarHtml = avatarEmojis.hat[player.avatarStyle.hat] || '🤠';
+          } else if (player.avatarStyle?.glasses) {
+            avatarHtml = avatarEmojis.glasses[player.avatarStyle.glasses] || '🕶️';
+          }
+          
+          return `
+            <div class="leader-item">
+              <div class="leader-avatar">${avatarHtml}</div>
+              <div class="leader-info">
+                <div class="leader-name">${player.name}</div>
+                <div class="leader-coins">Монет: ${player.coins} | Ур: ${player.level}</div>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (e) {
         listEl.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Ошибка загрузки</div>';
       }
@@ -717,9 +770,18 @@
       e.preventDefault();
       coins += (window.clickMultiplier || 1);
       coinsEl.textContent = coins;
+      updateLevelDisplay();
+      
+      // Зарабатываем звёзды за клики
+      if (coins % 100 === 0) {
+        stars++;
+        starsEl.textContent = stars;
+      }
+      
       sendScore();
       checkAchievements();
-
+      
+      // Анимации
       const plusOne = document.createElement('div');
       plusOne.className = 'plus-one';
       plusOne.textContent = `+${window.clickMultiplier || 1}`;
@@ -762,49 +824,27 @@
 
     document.body.addEventListener('click', handleClick);
 
-    // Лидеры
-    const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+    // Обработчики кнопок
     document.getElementById('leadersBtn').addEventListener('click', () => {
-      leaderboardOverlay.classList.add('active');
+      document.getElementById('leaderboardOverlay').classList.add('active');
       loadLeaderboard();
     });
-    document.getElementById('closeLeaderboard').addEventListener('click', () => {
-      leaderboardOverlay.classList.remove('active');
-    });
-    leaderboardOverlay.addEventListener('click', (e) => {
-      if (e.target === leaderboardOverlay) {
-        leaderboardOverlay.classList.remove('active');
-      }
-    });
-
-    // Достижения
-    const achievementsOverlay = document.getElementById('achievementsOverlay');
+    
     document.getElementById('achievementsBtn').addEventListener('click', () => {
-      achievementsOverlay.classList.add('active');
+      document.getElementById('achievementsOverlay').classList.add('active');
       loadAchievements();
     });
-    document.getElementById('closeAchievements').addEventListener('click', () => {
-      achievementsOverlay.classList.remove('active');
-    });
-    achievementsOverlay.addEventListener('click', (e) => {
-      if (e.target === achievementsOverlay) {
-        achievementsOverlay.classList.remove('active');
-      }
-    });
-
-    // Магазин
-    const shopOverlay = document.getElementById('shopOverlay');
+    
     document.getElementById('shopBtn').addEventListener('click', () => {
-      shopOverlay.classList.add('active');
+      document.getElementById('shopOverlay').classList.add('active');
       renderShop();
     });
-    document.getElementById('closeShop').addEventListener('click', () => {
-      shopOverlay.classList.remove('active');
-    });
-    shopOverlay.addEventListener('click', (e) => {
-      if (e.target === shopOverlay) {
-        shopOverlay.classList.remove('active');
-      }
+
+    // Закрытие оверлеев
+    ['closeLeaderboard', 'closeAchievements', 'closeShop'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        e.target.closest('.leaderboard-overlay, .achievements-overlay, .shop-overlay').classList.remove('active');
+      });
     });
 
     // Фоновые звёзды
@@ -832,7 +872,7 @@
     }
     createStars();
 
-    // ✨ ПАДАЮЩИЕ ЗВЁЗДЫ (улучшенная версия)
+    // Падающие звёзды
     function createCatchableStar(reward, isSuper = false) {
       const container = document.getElementById('stars-container');
       const star = document.createElement('div');
@@ -882,10 +922,15 @@
         e.stopPropagation();
         coins += reward;
         coinsEl.textContent = coins;
+        updateLevelDisplay();
         sendScore();
 
         if (reward === 55) caughtStars++;
-        else if (reward === 100) caughtSuperStars++;
+        else if (reward === 100) {
+          caughtSuperStars++;
+          stars++; // Получаем премиум-валюту за суперзвезду
+          starsEl.textContent = stars;
+        }
 
         checkAchievements();
 
