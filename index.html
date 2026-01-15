@@ -59,7 +59,33 @@
       overflow: hidden;
     }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .username { font-size: 1.2rem; font-weight: bold; white-space: nowrap; }
+    .username {
+      font-size: 1.2rem;
+      font-weight: bold;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .edit-nickname-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edit-nickname-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
 
     .level-display {
       font-size: 1.2rem;
@@ -129,7 +155,8 @@
     /* Оверлеи */
     .leaderboard-overlay,
     .achievements-overlay,
-    .shop-overlay {
+    .shop-overlay,
+    .nickname-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.9);
@@ -144,14 +171,16 @@
 
     .leaderboard-overlay.active,
     .achievements-overlay.active,
-    .shop-overlay.active {
+    .shop-overlay.active,
+    .nickname-overlay.active {
       opacity: 1;
       pointer-events: all;
     }
 
     .leaderboard-panel,
     .achievements-panel,
-    .shop-panel {
+    .shop-panel,
+    .nickname-panel {
       background: linear-gradient(135deg, #1a1a2e, #16213e);
       width: 90%;
       max-width: 500px;
@@ -166,20 +195,23 @@
 
     .leaderboard-panel::-webkit-scrollbar,
     .achievements-panel::-webkit-scrollbar,
-    .shop-panel::-webkit-scrollbar {
+    .shop-panel::-webkit-scrollbar,
+    .nickname-panel::-webkit-scrollbar {
       display: none;
     }
 
     .leaderboard-panel,
     .achievements-panel,
-    .shop-panel {
+    .shop-panel,
+    .nickname-panel {
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
 
     .leaderboard-title,
     .achievements-title,
-    .shop-title {
+    .shop-title,
+    .nickname-title {
       text-align: center;
       font-size: 1.8rem;
       margin-bottom: 20px;
@@ -360,6 +392,24 @@
       cursor: not-allowed;
     }
 
+    #nicknameInput {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid #667eea;
+      background: rgba(0,0,0,0.3);
+      color: white;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    #nicknameError {
+      color: red;
+      margin-top: 8px;
+      min-height: 20px;
+      font-size: 0.9rem;
+    }
+
     @media (max-width: 600px) {
       .coins-display { font-size: 2rem; }
       .coin-button { width: 110px; height: 110px; font-size: 3rem; }
@@ -373,7 +423,10 @@
 <body>
   <div class="user-info" id="userInfo">
     <div class="avatar" id="avatar">👤</div>
-    <div class="username" id="username">Загрузка...</div>
+    <div class="username">
+      <span id="usernameDisplay">Загрузка...</span>
+      <button class="edit-nickname-btn" id="editNicknameBtn">✏️</button>
+    </div>
   </div>
 
   <div id="stars-container"></div>
@@ -422,6 +475,22 @@
     </div>
   </div>
 
+  <!-- Оверлей смены ника -->
+  <div class="nickname-overlay" id="nicknameOverlay">
+    <div class="nickname-panel">
+      <button class="close-btn" id="closeNickname">&times;</button>
+      <div class="nickname-title">Изменить ник</div>
+      <div style="margin: 20px 0;">
+        <input type="text" id="nicknameInput" placeholder="Введите ник (3-16 символов)" maxlength="16">
+        <div id="nicknameError"></div>
+      </div>
+      <button class="buy-btn" id="saveNicknameBtn" style="width: 100%;">Сохранить</button>
+      <div style="margin-top: 15px; color: #aaa; font-size: 0.9rem;">
+        Можно менять ник раз в 24 часа
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = 'https://clicker-backend-1.onrender.com';
 
@@ -444,6 +513,8 @@
     let caughtStars = 0;
     let caughtSuperStars = 0;
     let avatarStyle = {};
+    let customNickname = null;
+    let lastNicknameChange = 0;
     let upgrades = JSON.parse(localStorage.getItem('upgrades') || '{}');
     let unlockedAchievements = JSON.parse(localStorage.getItem('unlocked_achievements') || '[]');
 
@@ -451,8 +522,13 @@
     const starsEl = document.getElementById('stars');
     const levelEl = document.getElementById('level');
     const avatarEl = document.getElementById('avatar');
-    const usernameEl = document.getElementById('username');
     const userInfoEl = document.getElementById('userInfo');
+
+    // Список запрещённых слов (пример)
+    const bannedWords = [
+      'хуй', 'пизд', 'ебать', 'сука', 'блядь', 'нахуй', 'cock', 'fuck', 'shit', 'bitch',
+      'хер', 'дроч', 'гандон', 'мудак', 'идиот', 'дурак', 'лох', 'чмо'
+    ];
 
     const avatarEmojis = {
       hat: { cowboy: '🤠', wizard: '🧙', crown: '👑' },
@@ -479,11 +555,23 @@
       
       avatarEl.textContent = emoji;
       
-      // Обновляем фон профиля
       userInfoEl.className = 'user-info';
       if (avatarStyle.background) {
         userInfoEl.classList.add(`bg-${avatarStyle.background}`);
       }
+    }
+
+    function containsBannedWord(text) {
+      const lower = text.toLowerCase();
+      return bannedWords.some(word => lower.includes(word));
+    }
+
+    function isValidNickname(nick) {
+      if (!nick || nick.length < 3 || nick.length > 16) return false;
+      if (/^\d+$/.test(nick)) return false;
+      if (/[<>{}[\]]/.test(nick)) return false;
+      if (containsBannedWord(nick)) return false;
+      return true;
     }
 
     const achievements = [
@@ -670,13 +758,6 @@
       }
     }
 
-    usernameEl.textContent = username;
-    if (user.photo_url && !Object.keys(avatarStyle).length) {
-      avatarEl.innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
-    } else {
-      renderAvatar();
-    }
-
     async function loadUserData() {
       try {
         const res = await fetch(`${API_URL}/api/user/${userId}`);
@@ -688,6 +769,11 @@
         avatarStyle = data.avatarStyle || {};
         caughtStars = data.caughtStars || 0;
         caughtSuperStars = data.caughtSuperStars || 0;
+        customNickname = data.customNickname || null;
+        lastNicknameChange = data.lastNicknameChange || 0;
+        
+        const displayName = customNickname || username;
+        document.getElementById('usernameDisplay').textContent = displayName;
         
         coinsEl.textContent = coins;
         starsEl.textContent = stars;
@@ -697,6 +783,8 @@
         checkAchievements();
         applyUpgrades();
       } catch (e) {
+        const displayName = customNickname || username;
+        document.getElementById('usernameDisplay').textContent = displayName;
         coinsEl.textContent = coins;
         starsEl.textContent = stars;
         levelEl.textContent = level;
@@ -710,7 +798,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             userId, 
-            username, 
+            username: customNickname || username,
             coins,
             stars,
             level,
@@ -861,6 +949,60 @@
     document.getElementById('shopBtn').addEventListener('click', () => {
       document.getElementById('shopOverlay').classList.add('active');
       renderShop();
+    });
+
+    // Смена ника
+    document.getElementById('editNicknameBtn').addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastNicknameChange < 24 * 60 * 60 * 1000) {
+        alert('Менять ник можно раз в 24 часа!');
+        return;
+      }
+      
+      document.getElementById('nicknameInput').value = customNickname || username;
+      document.getElementById('nicknameError').textContent = '';
+      document.getElementById('nicknameOverlay').classList.add('active');
+    });
+
+    document.getElementById('closeNickname').addEventListener('click', () => {
+      document.getElementById('nicknameOverlay').classList.remove('active');
+    });
+
+    document.getElementById('nicknameOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('nicknameOverlay')) {
+        document.getElementById('nicknameOverlay').classList.remove('active');
+      }
+    });
+
+    document.getElementById('saveNicknameBtn').addEventListener('click', async () => {
+      const newNick = document.getElementById('nicknameInput').value.trim();
+      const errorEl = document.getElementById('nicknameError');
+      
+      if (!isValidNickname(newNick)) {
+        errorEl.textContent = 'Ник должен быть от 3 до 16 символов, без мата и спецсимволов';
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_URL}/api/update-nickname`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, newNick })
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+          customNickname = newNick;
+          lastNicknameChange = Date.now();
+          document.getElementById('usernameDisplay').textContent = newNick;
+          document.getElementById('nicknameOverlay').classList.remove('active');
+          sendScore();
+        } else {
+          errorEl.textContent = result.error || 'Не удалось изменить ник';
+        }
+      } catch (e) {
+        errorEl.textContent = 'Ошибка сети';
+      }
     });
 
     ['closeLeaderboard', 'closeAchievements', 'closeShop'].forEach(id => {
