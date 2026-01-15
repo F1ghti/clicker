@@ -400,56 +400,6 @@
       .achievements-btn { bottom: 70px; padding: 10px 20px; font-size: 1rem; }
       .shop-btn { bottom: 120px; padding: 10px 20px; font-size: 1rem; }
     }
-
-    /* АНИМИРОВАННЫЕ ФОНЫ — РАБОТАЮТ НА ВСЁМ ЭКРАНЕ */
-    body.bg-cosmos {
-      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
-      animation: cosmosFloat 20s infinite linear;
-    }
-    @keyframes cosmosFloat {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
-    }
-    body.bg-cosmos::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-image: 
-        radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px),
-        radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px);
-      background-size: 100px 100px, 80px 80px;
-      opacity: 0.3;
-      z-index: -1;
-    }
-
-    body.bg-neon {
-      background: linear-gradient(135deg, #ff00cc, #333399, #00ccff);
-      background-size: 400% 400%;
-      animation: neonPulse 8s ease infinite;
-    }
-    @keyframes neonPulse {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    body.bg-fire {
-      background: linear-gradient(to bottom, #ff5e00, #ff0000, #8b0000);
-      animation: fireFlicker 3s infinite alternate;
-    }
-    @keyframes fireFlicker {
-      0% { opacity: 0.8; }
-      100% { opacity: 1; }
-    }
-
-    body.bg-forest {
-      background: linear-gradient(to bottom, #2c5530, #1a3a20, #0d2215);
-      animation: forestBreathe 10s infinite alternate;
-    }
-    @keyframes forestBreathe {
-      0% { filter: brightness(1); }
-      100% { filter: brightness(1.1); }
-    }
   </style>
 </head>
 <body>
@@ -544,7 +494,6 @@
     let level = 1;
     let caughtStars = 0;
     let caughtSuperStars = 0;
-    let avatarStyle = {};
     let customNickname = null;
     let lastNicknameChange = 0;
     let upgrades = JSON.parse(localStorage.getItem('upgrades') || '{}');
@@ -554,17 +503,11 @@
     const starsEl = document.getElementById('stars');
     const levelEl = document.getElementById('level');
     const avatarEl = document.getElementById('avatar');
-    const userInfoEl = document.getElementById('userInfo');
 
     const bannedWords = [
       'хуй', 'пизд', 'ебать', 'сука', 'блядь', 'нахуй', 'cock', 'fuck', 'shit', 'bitch',
       'хер', 'дроч', 'гандон', 'мудак', 'идиот', 'дурак', 'лох', 'чмо'
     ];
-
-    const avatarEmojis = {
-      hat: { cowboy: '🤠', wizard: '🧙', crown: '👑' },
-      glasses: { sunglasses: '🕶️', nerd: '👓' }
-    };
 
     function calculateLevel(coins) {
       return Math.floor(coins / 1000) + 1;
@@ -573,29 +516,6 @@
     function updateLevelDisplay() {
       level = calculateLevel(coins);
       levelEl.textContent = level;
-    }
-
-    function renderAvatar() {
-      let emoji = '👤';
-      if (avatarStyle.hat) {
-        emoji = avatarEmojis.hat[avatarStyle.hat] || '🤠';
-      } else if (avatarStyle.glasses) {
-        emoji = avatarEmojis.glasses[avatarStyle.glasses] || '🕶️';
-      }
-      avatarEl.textContent = emoji;
-    }
-
-    function applyBackground() {
-      // Убираем все классы bg-*
-      document.body.className = document.body.className
-        .split(' ')
-        .filter(cls => !cls.startsWith('bg-'))
-        .join(' ');
-      
-      // Применяем новый фон
-      if (avatarStyle.background) {
-        document.body.classList.add(`bg-${avatarStyle.background}`);
-      }
     }
 
     function containsBannedWord(text) {
@@ -690,19 +610,17 @@
       }, 3000);
     }
 
+    // ✅ НОВЫЕ УЛУЧШЕНИЯ КЛИКА
     const shopItems = [
-      { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle', currency: 'coins' },
+      { id: 'click_x2', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'multiplier', value: 2, currency: 'coins' },
+      { id: 'click_x3', name: 'x3 Клик', desc: 'Каждый клик даёт +3 монеты', price: 300, type: 'multiplier', value: 3, currency: 'coins' },
+      { id: 'click_x5', name: 'x5 Клик', desc: 'Каждый клик даёт +5 монет', price: 800, type: 'multiplier', value: 5, currency: 'coins' },
+      { id: 'click_x10', name: 'x10 Клик', desc: 'Каждый клик даёт +10 монет!', price: 2000, type: 'multiplier', value: 10, currency: 'coins' },
       { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle', currency: 'coins' },
       { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable', currency: 'coins' },
       { id: 'hat_cowboy', name: 'Ковбойская шляпа', desc: 'Выглядит круто!', price: 500, type: 'avatar', category: 'hat', currency: 'coins' },
       { id: 'glasses_sunglasses', name: 'Очки', desc: 'Стильный образ', price: 300, type: 'avatar', category: 'glasses', currency: 'coins' },
-      { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'background', category: 'background', currency: 'coins' },
-      { id: 'hat_crown', name: 'Корона', desc: 'Вы король кликера!', price: 10, type: 'avatar', category: 'hat', currency: 'stars' },
-      { id: 'bg_galaxy', name: 'Галактика', desc: 'Фон из далёких звёзд', price: 20, type: 'background', category: 'background', currency: 'stars' },
-      { id: 'bg_cosmos', name: 'Космос', desc: 'Живая галактика', price: 2000, type: 'background', category: 'background', currency: 'coins' },
-      { id: 'bg_neon', name: 'Неон', desc: 'Пульсирующий свет', price: 1000, type: 'background', category: 'background', currency: 'stars' },
-      { id: 'bg_fire', name: 'Огонь', desc: 'Танцующее пламя', price: 2500, type: 'background', category: 'background', currency: 'stars' },
-      { id: 'bg_forest', name: 'Лес', desc: 'Шепчущий лес', price: 500, type: 'background', category: 'background', currency: 'stars' }
+      { id: 'hat_crown', name: 'Корона', desc: 'Вы король кликера!', price: 10, type: 'avatar', category: 'hat', currency: 'stars' }
     ];
 
     function isUnlocked(itemId) {
@@ -711,6 +629,14 @@
 
     function saveUpgrades() {
       localStorage.setItem('upgrades', JSON.stringify(upgrades));
+    }
+
+    function getCurrentMultiplier() {
+      if (isUnlocked('click_x10')) return 10;
+      if (isUnlocked('click_x5')) return 5;
+      if (isUnlocked('click_x3')) return 3;
+      if (isUnlocked('click_x2')) return 2;
+      return 1;
     }
 
     function renderShop() {
@@ -753,19 +679,18 @@
               } else return;
             }
 
-            if (item.type === 'toggle') {
+            if (item.type === 'multiplier' || item.type === 'toggle') {
               upgrades[id] = true;
               saveUpgrades();
-              applyUpgrades();
             } else if (item.type === 'consumable') {
               if (id === 'gold_star') {
                 createCatchableStar(200, true);
               }
-            } else if (item.type === 'avatar' || item.type === 'background') {
-              // Универсальное применение
+            } else if (item.type === 'avatar') {
+              // Просто сохраняем (аватар без фона)
+              let avatarStyle = {};
               avatarStyle[item.category] = item.id.replace(`${item.category}_`, '');
-              renderAvatar();
-              applyBackground(); // ← КЛЮЧЕВОЙ ВЫЗОВ
+              // Нет применения фона
             }
             sendScore();
             renderShop();
@@ -775,10 +700,10 @@
     }
 
     function applyUpgrades() {
-      window.clickMultiplier = isUnlocked('double_click') ? 2 : 1;
+      // Авто-кликер
       if (isUnlocked('auto_clicker') && !window.autoClickerInterval) {
         window.autoClickerInterval = setInterval(() => {
-          coins += window.clickMultiplier || 1;
+          coins += getCurrentMultiplier();
           coinsEl.textContent = coins;
           updateLevelDisplay();
           sendScore();
@@ -796,7 +721,6 @@
         coins = data.coins || 0;
         stars = data.stars || 0;
         level = data.level || 1;
-        avatarStyle = data.avatarStyle || {};
         caughtStars = data.caughtStars || 0;
         caughtSuperStars = data.caughtSuperStars || 0;
         customNickname = data.customNickname || null;
@@ -808,8 +732,6 @@
         starsEl.textContent = stars;
         levelEl.textContent = level;
         
-        renderAvatar();
-        applyBackground(); // ← Применяем фон при загрузке
         checkAchievements();
         applyUpgrades();
       } catch (e) {
@@ -832,7 +754,7 @@
             coins,
             stars,
             level,
-            avatarStyle,
+            // Убрали avatarStyle
             referrerId,
             caughtStars,
             caughtSuperStars
@@ -854,11 +776,11 @@
         }
         listEl.innerHTML = leaders.map(player => {
           let avatarHtml = '👤';
-          if (player.avatarStyle?.hat) {
-            avatarHtml = avatarEmojis.hat[player.avatarStyle.hat] || '🤠';
-          } else if (player.avatarStyle?.glasses) {
-            avatarHtml = avatarEmojis.glasses[player.avatarStyle.glasses] || '🕶️';
-          }
+          // Без фона — только эмодзи
+          if (player.avatarStyle?.hat === 'cowboy') avatarHtml = '🤠';
+          else if (player.avatarStyle?.hat === 'crown') avatarHtml = '👑';
+          else if (player.avatarStyle?.glasses === 'sunglasses') avatarHtml = '🕶️';
+          
           return `
             <div class="leader-item">
               <div class="leader-avatar">${avatarHtml}</div>
@@ -900,19 +822,22 @@
 
     function handleClick(e) {
       e.preventDefault();
-      coins += (window.clickMultiplier || 1);
+      const multiplier = getCurrentMultiplier();
+      coins += multiplier;
       coinsEl.textContent = coins;
       updateLevelDisplay();
+      
       if (coins % 100 === 0) {
         stars++;
         starsEl.textContent = stars;
       }
+      
       sendScore();
       checkAchievements();
       
       const plusOne = document.createElement('div');
       plusOne.className = 'plus-one';
-      plusOne.textContent = `+${window.clickMultiplier || 1}`;
+      plusOne.textContent = `+${multiplier}`;
       plusOne.style.left = `${e.clientX}px`;
       plusOne.style.top = `${e.clientY}px`;
       document.body.appendChild(plusOne);
