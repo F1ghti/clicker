@@ -498,6 +498,7 @@
     let lastNicknameChange = 0;
     let upgrades = JSON.parse(localStorage.getItem('upgrades') || '{}');
     let unlockedAchievements = JSON.parse(localStorage.getItem('unlocked_achievements') || '[]');
+    let totalRocketClicks = 0; // Счётчик кликов по ракете
 
     const coinsEl = document.getElementById('coins');
     const starsEl = document.getElementById('stars');
@@ -542,7 +543,8 @@
       { id: 'star_5', name: 'Охотник за звёздами', desc: 'Поймать 5 звёзд', target: 5, type: 'stars' },
       { id: 'star_10', name: 'Звёздный собиратель', desc: 'Поймать 10 звёзд', target: 10, type: 'stars' },
       { id: 'superstar_1', name: 'Космический герой', desc: 'Поймать редкую звезду (+100)', target: 1, type: 'superstars' },
-      { id: 'superstar_3', name: 'Легенда галактики', desc: 'Поймать 3 редкие звезды', target: 3, type: 'superstars' }
+      { id: 'superstar_3', name: 'Легенда галактики', desc: 'Поймать 3 редкие звезды', target: 3, type: 'superstars' },
+      { id: 'rocket_clicker', name: 'Космический пилот', desc: 'Накликать 10 раз по ракете', target: 10, type: 'rocket' }
     ];
 
     function checkAchievements() {
@@ -553,6 +555,8 @@
         if (ach.type === 'coins') currentValue = coins;
         else if (ach.type === 'stars') currentValue = caughtStars;
         else if (ach.type === 'superstars') currentValue = caughtSuperStars;
+        else if (ach.type === 'rocket') currentValue = totalRocketClicks;
+        
         if (currentValue >= ach.target) {
           unlockedAchievements.push(ach.id);
           newUnlocked = true;
@@ -610,7 +614,6 @@
       }, 3000);
     }
 
-    // ✅ НОВЫЕ УЛУЧШЕНИЯ КЛИКА
     const shopItems = [
       { id: 'click_x2', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'multiplier', value: 2, currency: 'coins' },
       { id: 'click_x3', name: 'x3 Клик', desc: 'Каждый клик даёт +3 монеты', price: 300, type: 'multiplier', value: 3, currency: 'coins' },
@@ -687,10 +690,7 @@
                 createCatchableStar(200, true);
               }
             } else if (item.type === 'avatar') {
-              // Просто сохраняем (аватар без фона)
-              let avatarStyle = {};
-              avatarStyle[item.category] = item.id.replace(`${item.category}_`, '');
-              // Нет применения фона
+              // Аватар без фона
             }
             sendScore();
             renderShop();
@@ -700,7 +700,6 @@
     }
 
     function applyUpgrades() {
-      // Авто-кликер
       if (isUnlocked('auto_clicker') && !window.autoClickerInterval) {
         window.autoClickerInterval = setInterval(() => {
           coins += getCurrentMultiplier();
@@ -725,6 +724,7 @@
         caughtSuperStars = data.caughtSuperStars || 0;
         customNickname = data.customNickname || null;
         lastNicknameChange = data.lastNicknameChange || 0;
+        totalRocketClicks = data.totalRocketClicks || 0;
         
         const displayName = customNickname || username;
         document.getElementById('usernameDisplay').textContent = displayName;
@@ -754,10 +754,10 @@
             coins,
             stars,
             level,
-            // Убрали avatarStyle
             referrerId,
             caughtStars,
-            caughtSuperStars
+            caughtSuperStars,
+            totalRocketClicks
           })
         });
       } catch (e) {
@@ -776,7 +776,6 @@
         }
         listEl.innerHTML = leaders.map(player => {
           let avatarHtml = '👤';
-          // Без фона — только эмодзи
           if (player.avatarStyle?.hat === 'cowboy') avatarHtml = '🤠';
           else if (player.avatarStyle?.hat === 'crown') avatarHtml = '👑';
           else if (player.avatarStyle?.glasses === 'sunglasses') avatarHtml = '🕶️';
@@ -1058,6 +1057,87 @@
       container.appendChild(star);
       animate();
     }
+
+    // === РАКЕТА-ИНВЕНТ ===
+    let rocketActive = false;
+
+    function createRocketEvent() {
+      if (rocketActive) return;
+      
+      rocketActive = true;
+      let currentRocketClicks = 0;
+
+      const rocket = document.createElement('div');
+      rocket.innerHTML = '🚀';
+      rocket.style.position = 'fixed';
+      rocket.style.left = '50%';
+      rocket.style.top = '50%';
+      rocket.style.transform = 'translate(-50%, -50%) scale(0)';
+      rocket.style.fontSize = '8rem';
+      rocket.style.zIndex = '999';
+      rocket.style.cursor = 'pointer';
+      rocket.style.textShadow = '0 0 20px #ff00ff, 0 0 30px #00ccff';
+      rocket.style.animation = 'rocketAppear 1s forwards, rocketWiggle 0.5s infinite';
+
+      rocket.addEventListener('click', (e) => {
+        e.stopPropagation();
+        coins += 100;
+        coinsEl.textContent = coins;
+        sendScore();
+        totalRocketClicks++;
+        checkAchievements();
+
+        const plusText = document.createElement('div');
+        plusText.className = 'plus-one';
+        plusText.textContent = '+100';
+        plusText.style.color = '#ff00ff';
+        plusText.style.left = `${e.clientX}px`;
+        plusText.style.top = `${e.clientY}px`;
+        document.body.appendChild(plusText);
+        setTimeout(() => plusText.remove(), 1000);
+      });
+
+      document.body.appendChild(rocket);
+
+      setTimeout(() => {
+        if (rocket.parentNode) {
+          rocket.style.animation = 'rocketDisappear 1s forwards';
+          setTimeout(() => {
+            if (rocket.parentNode) rocket.remove();
+          }, 1000);
+        }
+        rocketActive = false;
+      }, 15000);
+    }
+
+    const rocketStyles = document.createElement('style');
+    rocketStyles.textContent = `
+      @keyframes rocketAppear {
+        0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+        70% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      }
+      @keyframes rocketDisappear {
+        0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      }
+      @keyframes rocketWiggle {
+        0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); }
+        50% { transform: translate(-50%, -50%) scale(1) rotate(2deg); }
+      }
+    `;
+    document.head.appendChild(rocketStyles);
+
+    function startRocketTimer() {
+      const delay = 60000; // 60 секунд
+      setTimeout(() => {
+        createRocketEvent();
+        startRocketTimer();
+      }, delay);
+    }
+
+    startRocketTimer();
+    // === КОНЕЦ РАКЕТЫ ===
 
     function startNormalStarTimer() {
       const delay = 8000 + Math.random() * 12000;
