@@ -110,8 +110,31 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
 
+    .shop-btn {
+      position: absolute;
+      bottom: 130px;
+      background: linear-gradient(135deg, #ffd89b, #19547b);
+      color: #333;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      z-index: 20;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .shop-btn:hover, .shop-btn:active {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    /* Оверлеи */
     .leaderboard-overlay,
-    .achievements-overlay {
+    .achievements-overlay,
+    .shop-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.9);
@@ -125,42 +148,43 @@
     }
 
     .leaderboard-overlay.active,
-    .achievements-overlay.active {
+    .achievements-overlay.active,
+    .shop-overlay.active {
       opacity: 1;
       pointer-events: all;
     }
 
     .leaderboard-panel,
-    .achievements-panel {
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  width: 90%;
-  max-width: 500px;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  transform: translateY(20px);
-  transition: transform 0.3s ease;
-  max-height: 80vh;
-  overflow-y: auto; /* ✅ Прокрутка внутри панели */
-  -webkit-overflow-scrolling: touch; /* Плавность на iOS */
-}
+    .achievements-panel,
+    .shop-panel {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      width: 90%;
+      max-width: 500px;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
 
-/* Скрываем полосу прокрутки (опционально) */
-.achievements-panel::-webkit-scrollbar {
-  display: none;
-}
-.achievements-panel {
-  -ms-overflow-style: none;  /* IE/Edge */
-  scrollbar-width: none;     /* Firefox */
-}
+    .leaderboard-panel::-webkit-scrollbar,
+    .achievements-panel::-webkit-scrollbar,
+    .shop-panel::-webkit-scrollbar {
+      display: none;
+    }
 
-    .leaderboard-overlay.active .leaderboard-panel,
-    .achievements-overlay.active .achievements-panel {
-      transform: translateY(0);
+    .leaderboard-panel,
+    .achievements-panel,
+    .shop-panel {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
 
     .leaderboard-title,
-    .achievements-title {
+    .achievements-title,
+    .shop-title {
       text-align: center;
       font-size: 1.8rem;
       margin-bottom: 20px;
@@ -169,7 +193,8 @@
     }
 
     .leader-item,
-    .achievement-item {
+    .achievement-item,
+    .shop-item {
       display: flex;
       align-items: center;
       padding: 12px;
@@ -209,18 +234,21 @@
     }
 
     .leader-name,
-    .achievement-name {
+    .achievement-name,
+    .shop-info h3 {
       font-weight: bold;
       font-size: 1.1rem;
     }
 
     .leader-coins,
-    .achievement-desc {
+    .achievement-desc,
+    .shop-info p {
       color: gold;
       font-size: 1rem;
     }
 
-    .achievement-desc {
+    .achievement-desc,
+    .shop-info p {
       color: #aaa;
     }
 
@@ -298,12 +326,40 @@
       opacity: 0;
     }
 
+    .shop-item {
+      justify-content: space-between;
+    }
+
+    .shop-price {
+      background: gold;
+      color: #000;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .buy-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .buy-btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
     @media (max-width: 600px) {
       .coins-display { font-size: 2rem; }
       .coin-button { width: 110px; height: 110px; font-size: 3rem; }
       .user-info { top: 10px; left: 10px; padding: 6px 12px; }
       .leaders-btn { bottom: 20px; padding: 10px 20px; font-size: 1rem; }
       .achievements-btn { bottom: 70px; padding: 10px 20px; font-size: 1rem; }
+      .shop-btn { bottom: 120px; padding: 10px 20px; font-size: 1rem; }
     }
   </style>
 </head>
@@ -322,6 +378,7 @@
 
   <button class="leaders-btn" id="leadersBtn">🏆 Лидеры</button>
   <button class="achievements-btn" id="achievementsBtn">🏅 Достижения</button>
+  <button class="shop-btn" id="shopBtn">🛒 Магазин</button>
 
   <!-- Оверлей лидеров -->
   <div class="leaderboard-overlay" id="leaderboardOverlay">
@@ -340,6 +397,17 @@
       <button class="close-btn" id="closeAchievements">&times;</button>
       <div class="achievements-title">Мои достижения</div>
       <div id="achievementsList">
+        <div style="text-align:center; padding:20px; color:#aaa;">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Оверлей магазина -->
+  <div class="shop-overlay" id="shopOverlay">
+    <div class="shop-panel">
+      <button class="close-btn" id="closeShop">&times;</button>
+      <div class="shop-title">Магазин</div>
+      <div id="shopList">
         <div style="text-align:center; padding:20px; color:#aaa;">Загрузка...</div>
       </div>
     </div>
@@ -365,12 +433,103 @@
     const coinsEl = document.getElementById('coins');
     coinsEl.textContent = '...';
 
+    // Состояние улучшений
+    let upgrades = JSON.parse(localStorage.getItem('upgrades') || '{}');
+
+    // Список товаров
+    const shopItems = [
+      { id: 'double_click', name: 'x2 Клик', desc: 'Каждый клик даёт +2 монеты', price: 100, type: 'toggle' },
+      { id: 'auto_clicker', name: 'Авто-кликер', desc: 'Автоматический клик каждые 2 сек', price: 500, type: 'toggle' },
+      { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable' },
+      { id: 'star_speed', name: 'Ускорение звёзд', desc: 'Звёзды появляются в 2 раза чаще', price: 300, type: 'toggle' }
+    ];
+
+    // Проверка, куплено ли улучшение
+    function isUnlocked(itemId) {
+      return upgrades[itemId] === true;
+    }
+
+    // Сохранение улучшений
+    function saveUpgrades() {
+      localStorage.setItem('upgrades', JSON.stringify(upgrades));
+    }
+
+    // Обновление магазина
+    function renderShop() {
+      const listEl = document.getElementById('shopList');
+      
+      listEl.innerHTML = shopItems.map(item => {
+        const isBought = isUnlocked(item.id);
+        const isDisabled = coins < item.price && !isBought;
+        const btnText = isBought ? 'Куплено' : 'Купить';
+        
+        return `
+          <div class="shop-item ${isDisabled ? 'disabled' : ''}">
+            <div class="shop-info">
+              <h3>${item.name}</h3>
+              <p>${item.desc}</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div class="shop-price">${item.price}</div>
+              <button class="buy-btn" data-id="${item.id}" ${isBought ? 'disabled' : ''} ${isDisabled ? 'disabled' : ''}>
+                ${btnText}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Обработчики покупок
+      document.querySelectorAll('.buy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const item = shopItems.find(i => i.id === id);
+          
+          if (coins >= item.price && !isUnlocked(id)) {
+            coins -= item.price;
+            coinsEl.textContent = coins;
+            sendScore();
+            
+            if (item.type === 'toggle') {
+              upgrades[id] = true;
+              saveUpgrades();
+              applyUpgrades();
+            } else if (item.type === 'consumable') {
+              if (id === 'gold_star') {
+                createCatchableStar(200, true);
+              }
+            }
+            
+            renderShop();
+          }
+        });
+      });
+    }
+
+    // Применение улучшений
+    function applyUpgrades() {
+      window.clickMultiplier = isUnlocked('double_click') ? 2 : 1;
+      
+      if (isUnlocked('auto_clicker') && !window.autoClickerInterval) {
+        window.autoClickerInterval = setInterval(() => {
+          coins += window.clickMultiplier || 1;
+          coinsEl.textContent = coins;
+          sendScore();
+        }, 2000);
+      } else if (!isUnlocked('auto_clicker') && window.autoClickerInterval) {
+        clearInterval(window.autoClickerInterval);
+        window.autoClickerInterval = null;
+      }
+    }
+
     // === СИСТЕМА ДОСТИЖЕНИЙ ===
     const achievements = [
       { id: 'first_click', name: 'Первый шаг', desc: 'Сделать первый клик', target: 1, type: 'coins' },
       { id: 'click_100', name: 'Активный игрок', desc: 'Накликать 100 монет', target: 100, type: 'coins' },
       { id: 'click_500', name: 'Клик-мастер', desc: 'Накликать 500 монет', target: 500, type: 'coins' },
-      { id: 'click_1000', name: 'Миллионер', desc: 'Накликать 1000 монет', target: 1000, type: 'coins' },
+      { id: 'click_1000', name: 'Быстрые пальчики', desc: 'Накликать 1000 монет', target: 1000, type: 'coins' },
+      { id: 'click_10000', name: 'Пальчики запада', desc: 'Накликать 10000 монет', target: 10000, type: 'coins' },
+      { id: 'click_1000000', name: 'Миллионер', desc: 'Накликать 1000000 монет', target: 1000000, type: 'coins' },
       { id: 'star_1', name: 'Первая звезда', desc: 'Поймать первую звезду (+55)', target: 1, type: 'stars' },
       { id: 'star_5', name: 'Охотник за звёздами', desc: 'Поймать 5 звёзд', target: 5, type: 'stars' },
       { id: 'star_10', name: 'Звёздный собиратель', desc: 'Поймать 10 звёзд', target: 10, type: 'stars' },
@@ -398,7 +557,6 @@
         }
       });
 
-      // Секретное достижение
       if (!unlockedAchievements.includes('secret_trio') && 
           coins >= 100 && caughtStars >= 1 && caughtSuperStars >= 1) {
         unlockedAchievements.push('secret_trio');
@@ -473,7 +631,8 @@
         caughtStars = data.caughtStars || 0;
         caughtSuperStars = data.caughtSuperStars || 0;
         coinsEl.textContent = coins;
-        checkAchievements(); // ✅ Проверяем после загрузки
+        checkAchievements();
+        applyUpgrades();
       } catch (e) {
         coinsEl.textContent = coins;
       }
@@ -556,15 +715,14 @@
     // Клик по монетке
     function handleClick(e) {
       e.preventDefault();
-      coins++;
+      coins += (window.clickMultiplier || 1);
       coinsEl.textContent = coins;
       sendScore();
       checkAchievements();
 
-      // Анимации
       const plusOne = document.createElement('div');
       plusOne.className = 'plus-one';
-      plusOne.textContent = '+1';
+      plusOne.textContent = `+${window.clickMultiplier || 1}`;
       plusOne.style.left = `${e.clientX}px`;
       plusOne.style.top = `${e.clientY}px`;
       document.body.appendChild(plusOne);
@@ -631,6 +789,21 @@
     achievementsOverlay.addEventListener('click', (e) => {
       if (e.target === achievementsOverlay) {
         achievementsOverlay.classList.remove('active');
+      }
+    });
+
+    // Магазин
+    const shopOverlay = document.getElementById('shopOverlay');
+    document.getElementById('shopBtn').addEventListener('click', () => {
+      shopOverlay.classList.add('active');
+      renderShop();
+    });
+    document.getElementById('closeShop').addEventListener('click', () => {
+      shopOverlay.classList.remove('active');
+    });
+    shopOverlay.addEventListener('click', (e) => {
+      if (e.target === shopOverlay) {
+        shopOverlay.classList.remove('active');
       }
     });
 
