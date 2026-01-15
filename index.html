@@ -418,6 +418,61 @@
       .achievements-btn { bottom: 70px; padding: 10px 20px; font-size: 1rem; }
       .shop-btn { bottom: 120px; padding: 10px 20px; font-size: 1rem; }
     }
+
+    /* Анимированные фоны */
+    body.bg-cosmos {
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+      animation: cosmosFloat 20s infinite linear;
+    }
+
+    @keyframes cosmosFloat {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
+
+    body.bg-cosmos::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px);
+      background-size: 100px 100px, 80px 80px;
+      opacity: 0.3;
+      z-index: -1;
+    }
+
+    body.bg-neon {
+      background: linear-gradient(135deg, #ff00cc, #333399, #00ccff);
+      background-size: 400% 400%;
+      animation: neonPulse 8s ease infinite;
+    }
+
+    @keyframes neonPulse {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body.bg-fire {
+      background: linear-gradient(to bottom, #ff5e00, #ff0000, #8b0000);
+      animation: fireFlicker 3s infinite alternate;
+    }
+
+    @keyframes fireFlicker {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+    body.bg-forest {
+      background: linear-gradient(to bottom, #2c5530, #1a3a20, #0d2215);
+      animation: forestBreathe 10s infinite alternate;
+    }
+
+    @keyframes forestBreathe {
+      0% { filter: brightness(1); }
+      100% { filter: brightness(1.1); }
+    }
   </style>
 </head>
 <body>
@@ -524,7 +579,6 @@
     const avatarEl = document.getElementById('avatar');
     const userInfoEl = document.getElementById('userInfo');
 
-    // Список запрещённых слов (пример)
     const bannedWords = [
       'хуй', 'пизд', 'ебать', 'сука', 'блядь', 'нахуй', 'cock', 'fuck', 'shit', 'bitch',
       'хер', 'дроч', 'гандон', 'мудак', 'идиот', 'дурак', 'лох', 'чмо'
@@ -558,6 +612,13 @@
       userInfoEl.className = 'user-info';
       if (avatarStyle.background) {
         userInfoEl.classList.add(`bg-${avatarStyle.background}`);
+      }
+    }
+
+    function applyBackground() {
+      document.body.className = document.body.className.replace(/bg-\w+/g, '').trim();
+      if (avatarStyle.background) {
+        document.body.classList.add(`bg-${avatarStyle.background}`);
       }
     }
 
@@ -668,7 +729,11 @@
       { id: 'glasses_sunglasses', name: 'Очки', desc: 'Стильный образ', price: 300, type: 'avatar', category: 'glasses', currency: 'coins' },
       { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'avatar', category: 'background', currency: 'coins' },
       { id: 'hat_crown', name: 'Корона', desc: 'Вы король кликера!', price: 10, type: 'avatar', category: 'hat', currency: 'stars' },
-      { id: 'bg_galaxy', name: 'Галактика', desc: 'Фон из далёких звёзд', price: 20, type: 'avatar', category: 'background', currency: 'stars' }
+      { id: 'bg_galaxy', name: 'Галактика', desc: 'Фон из далёких звёзд', price: 20, type: 'avatar', category: 'background', currency: 'stars' },
+      { id: 'bg_cosmos', name: 'Космос', desc: 'Живая галактика', price: 2000, type: 'background', category: 'background', currency: 'coins' },
+      { id: 'bg_neon', name: 'Неон', desc: 'Пульсирующий свет', price: 1000, type: 'background', category: 'background', currency: 'stars' },
+      { id: 'bg_fire', name: 'Огонь', desc: 'Танцующее пламя', price: 2500, type: 'background', category: 'background', currency: 'stars' },
+      { id: 'bg_forest', name: 'Лес', desc: 'Шепчущий лес', price: 500, type: 'background', category: 'background', currency: 'stars' }
     ];
 
     function isUnlocked(itemId) {
@@ -733,6 +798,7 @@
             } else if (item.type === 'avatar') {
               avatarStyle[item.category] = item.id.replace(`${item.category}_`, '');
               renderAvatar();
+              applyBackground(); // ← ВАЖНО: применяем фон
             }
             
             sendScore();
@@ -780,6 +846,7 @@
         levelEl.textContent = level;
         
         renderAvatar();
+        applyBackground(); // ← Применяем фон при загрузке
         checkAchievements();
         applyUpgrades();
       } catch (e) {
@@ -951,7 +1018,6 @@
       renderShop();
     });
 
-    // Смена ника
     document.getElementById('editNicknameBtn').addEventListener('click', () => {
       const now = Date.now();
       if (now - lastNicknameChange < 24 * 60 * 60 * 1000) {
