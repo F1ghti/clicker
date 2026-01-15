@@ -39,12 +39,6 @@
       border-radius: 20px;
       z-index: 20;
     }
-    .user-info.bg-space {
-      background: rgba(15, 12, 41, 0.7) !important;
-    }
-    .user-info.bg-galaxy {
-      background: rgba(26, 26, 46, 0.7) !important;
-    }
 
     .avatar {
       width: 40px;
@@ -230,18 +224,6 @@
       border-radius: 12px;
     }
 
-    /* Фоны для лидерборда */
-    .leader-item.bg-space {
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    }
-
-    .leader-item.bg-galaxy {
-      background: radial-gradient(circle, #1a1a2e, #16213e, #0f3460);
-      background-image: 
-        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1) 2px, transparent 3px),
-        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 1px, transparent 2px);
-    }
-
     .leader-avatar,
     .achievement-icon {
       width: 36px;
@@ -419,17 +401,15 @@
       .shop-btn { bottom: 120px; padding: 10px 20px; font-size: 1rem; }
     }
 
-    /* Анимированные фоны */
+    /* АНИМИРОВАННЫЕ ФОНЫ — РАБОТАЮТ НА ВСЁМ ЭКРАНЕ */
     body.bg-cosmos {
       background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
       animation: cosmosFloat 20s infinite linear;
     }
-
     @keyframes cosmosFloat {
       0% { background-position: 0% 0%; }
       100% { background-position: 100% 100%; }
     }
-
     body.bg-cosmos::before {
       content: "";
       position: fixed;
@@ -447,7 +427,6 @@
       background-size: 400% 400%;
       animation: neonPulse 8s ease infinite;
     }
-
     @keyframes neonPulse {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
@@ -458,7 +437,6 @@
       background: linear-gradient(to bottom, #ff5e00, #ff0000, #8b0000);
       animation: fireFlicker 3s infinite alternate;
     }
-
     @keyframes fireFlicker {
       0% { opacity: 0.8; }
       100% { opacity: 1; }
@@ -468,7 +446,6 @@
       background: linear-gradient(to bottom, #2c5530, #1a3a20, #0d2215);
       animation: forestBreathe 10s infinite alternate;
     }
-
     @keyframes forestBreathe {
       0% { filter: brightness(1); }
       100% { filter: brightness(1.1); }
@@ -600,23 +577,22 @@
 
     function renderAvatar() {
       let emoji = '👤';
-      
       if (avatarStyle.hat) {
         emoji = avatarEmojis.hat[avatarStyle.hat] || '🤠';
       } else if (avatarStyle.glasses) {
         emoji = avatarEmojis.glasses[avatarStyle.glasses] || '🕶️';
       }
-      
       avatarEl.textContent = emoji;
-      
-      userInfoEl.className = 'user-info';
-      if (avatarStyle.background) {
-        userInfoEl.classList.add(`bg-${avatarStyle.background}`);
-      }
     }
 
     function applyBackground() {
-      document.body.className = document.body.className.replace(/bg-\w+/g, '').trim();
+      // Убираем все классы bg-*
+      document.body.className = document.body.className
+        .split(' ')
+        .filter(cls => !cls.startsWith('bg-'))
+        .join(' ');
+      
+      // Применяем новый фон
       if (avatarStyle.background) {
         document.body.classList.add(`bg-${avatarStyle.background}`);
       }
@@ -651,29 +627,24 @@
 
     function checkAchievements() {
       let newUnlocked = false;
-
       achievements.forEach(ach => {
         if (unlockedAchievements.includes(ach.id)) return;
-
         let currentValue = 0;
         if (ach.type === 'coins') currentValue = coins;
         else if (ach.type === 'stars') currentValue = caughtStars;
         else if (ach.type === 'superstars') currentValue = caughtSuperStars;
-
         if (currentValue >= ach.target) {
           unlockedAchievements.push(ach.id);
           newUnlocked = true;
           showAchievementPopup(ach.name, ach.desc);
         }
       });
-
       if (!unlockedAchievements.includes('secret_trio') && 
           coins >= 100 && caughtStars >= 1 && caughtSuperStars >= 1) {
         unlockedAchievements.push('secret_trio');
         newUnlocked = true;
         showAchievementPopup('Триумф!', 'Получить 100 монет, звезду и суперзвезду!');
       }
-
       if (newUnlocked) {
         localStorage.setItem('unlocked_achievements', JSON.stringify(unlockedAchievements));
       }
@@ -702,7 +673,6 @@
         </div>
       `;
       document.body.appendChild(popup);
-
       const style = document.createElement('style');
       style.textContent = `
         @keyframes slideInUp {
@@ -714,7 +684,6 @@
         }
       `;
       document.head.appendChild(style);
-
       setTimeout(() => {
         if (popup.parentNode) popup.remove();
         if (style.parentNode) style.remove();
@@ -727,9 +696,9 @@
       { id: 'gold_star', name: 'Золотая звезда', desc: 'Поймать звезду за +200 монет', price: 1000, type: 'consumable', currency: 'coins' },
       { id: 'hat_cowboy', name: 'Ковбойская шляпа', desc: 'Выглядит круто!', price: 500, type: 'avatar', category: 'hat', currency: 'coins' },
       { id: 'glasses_sunglasses', name: 'Очки', desc: 'Стильный образ', price: 300, type: 'avatar', category: 'glasses', currency: 'coins' },
-      { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'avatar', category: 'background', currency: 'coins' },
+      { id: 'bg_space', name: 'Космический фон', desc: 'Звёздное небо', price: 1000, type: 'background', category: 'background', currency: 'coins' },
       { id: 'hat_crown', name: 'Корона', desc: 'Вы король кликера!', price: 10, type: 'avatar', category: 'hat', currency: 'stars' },
-      { id: 'bg_galaxy', name: 'Галактика', desc: 'Фон из далёких звёзд', price: 20, type: 'avatar', category: 'background', currency: 'stars' },
+      { id: 'bg_galaxy', name: 'Галактика', desc: 'Фон из далёких звёзд', price: 20, type: 'background', category: 'background', currency: 'stars' },
       { id: 'bg_cosmos', name: 'Космос', desc: 'Живая галактика', price: 2000, type: 'background', category: 'background', currency: 'coins' },
       { id: 'bg_neon', name: 'Неон', desc: 'Пульсирующий свет', price: 1000, type: 'background', category: 'background', currency: 'stars' },
       { id: 'bg_fire', name: 'Огонь', desc: 'Танцующее пламя', price: 2500, type: 'background', category: 'background', currency: 'stars' },
@@ -746,13 +715,11 @@
 
     function renderShop() {
       const listEl = document.getElementById('shopList');
-      
       listEl.innerHTML = shopItems.map(item => {
         const isBought = isUnlocked(item.id);
         const isDisabled = (item.currency === 'stars' ? stars < item.price : coins < item.price) && !isBought;
         const btnText = isBought ? 'Куплено' : 'Купить';
         const priceDisplay = item.currency === 'stars' ? `💎${item.price}` : item.price;
-        
         return `
           <div class="shop-item ${isDisabled ? 'disabled' : ''}">
             <div class="shop-info">
@@ -773,7 +740,6 @@
         btn.addEventListener('click', () => {
           const id = btn.dataset.id;
           const item = shopItems.find(i => i.id === id);
-          
           if (!isUnlocked(id)) {
             if (item.currency === 'stars') {
               if (stars >= item.price) {
@@ -795,12 +761,12 @@
               if (id === 'gold_star') {
                 createCatchableStar(200, true);
               }
-            } else if (item.type === 'avatar') {
+            } else if (item.type === 'avatar' || item.type === 'background') {
+              // Универсальное применение
               avatarStyle[item.category] = item.id.replace(`${item.category}_`, '');
               renderAvatar();
-              applyBackground(); // ← ВАЖНО: применяем фон
+              applyBackground(); // ← КЛЮЧЕВОЙ ВЫЗОВ
             }
-            
             sendScore();
             renderShop();
           }
@@ -810,7 +776,6 @@
 
     function applyUpgrades() {
       window.clickMultiplier = isUnlocked('double_click') ? 2 : 1;
-      
       if (isUnlocked('auto_clicker') && !window.autoClickerInterval) {
         window.autoClickerInterval = setInterval(() => {
           coins += window.clickMultiplier || 1;
@@ -828,7 +793,6 @@
       try {
         const res = await fetch(`${API_URL}/api/user/${userId}`);
         const data = await res.json();
-        
         coins = data.coins || 0;
         stars = data.stars || 0;
         level = data.level || 1;
@@ -840,7 +804,6 @@
         
         const displayName = customNickname || username;
         document.getElementById('usernameDisplay').textContent = displayName;
-        
         coinsEl.textContent = coins;
         starsEl.textContent = stars;
         levelEl.textContent = level;
@@ -885,28 +848,19 @@
       try {
         const res = await fetch(`${API_URL}/api/leaderboard`);
         const leaders = await res.json();
-
         if (leaders.length === 0) {
           listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Пока нет лидеров</div>';
           return;
         }
-
         listEl.innerHTML = leaders.map(player => {
           let avatarHtml = '👤';
-          let backgroundClass = '';
-          
           if (player.avatarStyle?.hat) {
             avatarHtml = avatarEmojis.hat[player.avatarStyle.hat] || '🤠';
           } else if (player.avatarStyle?.glasses) {
             avatarHtml = avatarEmojis.glasses[player.avatarStyle.glasses] || '🕶️';
           }
-          
-          if (player.avatarStyle?.background) {
-            backgroundClass = `bg-${player.avatarStyle.background}`;
-          }
-          
           return `
-            <div class="leader-item ${backgroundClass}">
+            <div class="leader-item">
               <div class="leader-avatar">${avatarHtml}</div>
               <div class="leader-info">
                 <div class="leader-name">${player.name}</div>
@@ -922,17 +876,14 @@
 
     function loadAchievements() {
       const listEl = document.getElementById('achievementsList');
-      
       if (unlockedAchievements.length === 0) {
         listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Еще нет достижений</div>';
         return;
       }
-
       listEl.innerHTML = achievements.map(ach => {
         const isUnlocked = unlockedAchievements.includes(ach.id);
         const iconClass = isUnlocked ? 'achievement-icon unlocked' : 'achievement-icon locked';
         const itemClass = isUnlocked ? 'achievement-item' : 'achievement-item locked';
-        
         return `
           <div class="${itemClass}">
             <div class="${iconClass}">🏆</div>
@@ -952,12 +903,10 @@
       coins += (window.clickMultiplier || 1);
       coinsEl.textContent = coins;
       updateLevelDisplay();
-      
       if (coins % 100 === 0) {
         stars++;
         starsEl.textContent = stars;
       }
-      
       sendScore();
       checkAchievements();
       
@@ -1024,7 +973,6 @@
         alert('Менять ник можно раз в 24 часа!');
         return;
       }
-      
       document.getElementById('nicknameInput').value = customNickname || username;
       document.getElementById('nicknameError').textContent = '';
       document.getElementById('nicknameOverlay').classList.add('active');
@@ -1043,19 +991,16 @@
     document.getElementById('saveNicknameBtn').addEventListener('click', async () => {
       const newNick = document.getElementById('nicknameInput').value.trim();
       const errorEl = document.getElementById('nicknameError');
-      
       if (!isValidNickname(newNick)) {
         errorEl.textContent = 'Ник должен быть от 3 до 16 символов, без мата и спецсимволов';
         return;
       }
-      
       try {
         const res = await fetch(`${API_URL}/api/update-nickname`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId, newNick })
         });
-        
         const result = await res.json();
         if (result.success) {
           customNickname = newNick;
@@ -1104,10 +1049,8 @@
     function createCatchableStar(reward, isSuper = false) {
       const container = document.getElementById('stars-container');
       const star = document.createElement('div');
-      
       const visualSize = isSuper ? '14px' : '10px';
       const clickSize = isSuper ? '30px' : '25px';
-
       star.style.position = 'absolute';
       star.style.width = visualSize;
       star.style.height = visualSize;
@@ -1120,48 +1063,39 @@
       star.style.zIndex = '10';
       star.style.left = `${Math.random() * 100}%`;
       star.style.top = '-15%';
-      
       star.style.padding = `${(parseInt(clickSize) - parseInt(visualSize)) / 2}px`;
       star.style.margin = `-${(parseInt(clickSize) - parseInt(visualSize)) / 2}px`;
-
       const startX = parseFloat(star.style.left);
       const endX = startX + (Math.random() * 20 - 10);
       const duration = isSuper ? 6000 : 5000;
       const startTime = Date.now();
-
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const currentY = -15 + progress * 130;
         const currentX = startX + (endX - startX) * progress;
-        
         star.style.top = `${currentY}%`;
         star.style.left = `${currentX}%`;
         star.style.opacity = 1 - progress * 0.7;
-
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
           if (star.parentNode) star.remove();
         }
       };
-
       star.addEventListener('click', (e) => {
         e.stopPropagation();
         coins += reward;
         coinsEl.textContent = coins;
         updateLevelDisplay();
         sendScore();
-
         if (reward === 55) caughtStars++;
         else if (reward === 100) {
           caughtSuperStars++;
           stars++;
           starsEl.textContent = stars;
         }
-
         checkAchievements();
-
         const plusText = document.createElement('div');
         plusText.className = 'plus-one';
         plusText.textContent = `+${reward}`;
@@ -1170,7 +1104,6 @@
         plusText.style.top = `${e.clientY}px`;
         document.body.appendChild(plusText);
         setTimeout(() => plusText.remove(), 1000);
-
         const particleCount = 12;
         for (let i = 0; i < particleCount; i++) {
           const particle = document.createElement('div');
@@ -1179,13 +1112,11 @@
           particle.style.top = `${e.clientY}px`;
           particle.style.background = isSuper ? '#cc00ff' : '#ffcc00';
           document.body.appendChild(particle);
-          
           const angle = Math.random() * Math.PI * 2;
           const speed = 2 + Math.random() * 4;
           const vx = Math.cos(angle) * speed;
           const vy = Math.sin(angle) * speed;
           let opacity = 1, posX = e.clientX, posY = e.clientY;
-          
           const animateParticle = () => {
             opacity -= 0.02;
             posX += vx;
@@ -1197,10 +1128,8 @@
           };
           requestAnimationFrame(animateParticle);
         }
-
         star.remove();
       });
-
       container.appendChild(star);
       animate();
     }
